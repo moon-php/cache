@@ -116,6 +116,7 @@ class FileSystemAdapter extends AbstractAdapter
     }
 
     /**
+     * THIS IS NOT TRANSACTION-SAFE
      * {@inheritdoc}
      */
     public function deleteItems(array $keys): bool
@@ -141,6 +142,7 @@ class FileSystemAdapter extends AbstractAdapter
     }
 
     /**
+     * THIS IS NOT TRANSACTION-SAFE
      * {@inheritdoc}
      */
     public function saveItems(CacheItemCollectionInterface $items): bool
