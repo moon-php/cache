@@ -1,17 +1,59 @@
 <?php
 
-namespace Moon;
+namespace Moon\Cache;
 
+use Moon\Cache\Exception\CacheInvalidArgumentException;
 use Psr\Cache\CacheItemInterface;
 
 class CacheItem implements CacheItemInterface
 {
     /**
+     * @var string $key
+     */
+    protected $key;
+
+    /**
+     * @var mixed $value
+     */
+    protected $value;
+
+    /**
+     * @var bool $hit
+     */
+    protected $hit;
+
+    /**
+     * @var \DateTimeImmutable $expiration
+     */
+    protected $expiration;
+
+    /**
+     * Default value to use as default expiration date
+     */
+    protected const DEFAULT_EXPIRATION = 'now +1 week';
+
+    /**
+     * CacheItem constructor.
+     *
+     * @param string $key
+     * @param $value
+     * @param bool $hit
+     * @param \DateTimeImmutable $expiration
+     */
+    public function __construct(string $key, $value, \DateTimeImmutable $expiration = null, bool $hit = false)
+    {
+        $this->key = $key;
+        $this->value = $value;
+        $this->hit = $hit;
+        $this->expiration = $expiration ?: new \DateTimeImmutable(static::DEFAULT_EXPIRATION);
+    }
+
+    /**
      * {@inheritdoc}
      */
-    public function getKey()
+    public function getKey(): string
     {
-        // TODO: Implement getKey() method.
+        return $this->key;
     }
 
     /**
@@ -19,38 +61,54 @@ class CacheItem implements CacheItemInterface
      */
     public function get()
     {
-        // TODO: Implement get() method.
+        return $this->value;
     }
 
     /**
      * {@inheritdoc}
      */
-    public function isHit()
+    public function isHit(): bool
     {
-        // TODO: Implement isHit() method.
+        return $this->hit;
     }
 
     /**
      * {@inheritdoc}
      */
-    public function set($value)
+    public function set($value): CacheItemInterface
     {
-        // TODO: Implement set() method.
+        $this->value = $value;
+
+        return $this;
     }
 
     /**
      * {@inheritdoc}
      */
-    public function expiresAt($expiration)
+    public function expiresAt($expiration = null): CacheItemInterface
     {
-        // TODO: Implement expiresAt() method.
+        if ($expiration instanceof \DateTimeInterface) {
+            $this->expiration = $expiration;
+        } elseif ($expiration instanceof \DateTime) {
+            $this->expiration = \DateTimeImmutable::createFromMutable($expiration);
+        } elseif ($expiration instanceof \DateInterval) {
+            $this->expiration = (new \DateTimeImmutable())->add($expiration);
+        } elseif (is_int($expiration)) {
+            $this->expiration = new \DateTimeImmutable("now +$expiration seconds");
+        } elseif (null === $expiration) {
+            $this->expiration = new \DateTimeImmutable(self::DEFAULT_EXPIRATION);
+        } else {
+            throw new CacheInvalidArgumentException('Invalid expiration parameter for CacheItem.');
+        }
+
+        return $this;
     }
 
     /**
      * {@inheritdoc}
      */
-    public function expiresAfter($time)
+    public function expiresAfter($time): CacheItemInterface
     {
-        // TODO: Implement expiresAfter() method.
+        return $this->expiresAt($time);
     }
 }
