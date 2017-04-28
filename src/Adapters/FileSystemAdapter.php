@@ -29,9 +29,9 @@ class FileSystemAdapter extends AbstractAdapter
     public function __construct(string $poolName, string $directory = null)
     {
         $this->poolName = $poolName;
-        $this->directory = $directory ?: sys_get_temp_dir() . "/moon-cache";
+        $this->directory = $directory ? "$directory/{$this->poolName}" : sys_get_temp_dir() . "/moon-cache/{$this->poolName}";
         // If directory doesn't exists, create it
-        !file_exists($this->directory) ?: mkdir($this->directory, 0777, true);
+        is_dir($this->directory) ?: mkdir($this->directory, 0777, true);
     }
 
     /**
@@ -83,24 +83,30 @@ class FileSystemAdapter extends AbstractAdapter
     public function clear(): bool
     {
         // Create a RecursiveDirectoryIterator form the directory to clean up
-        $directory = new \RecursiveDirectoryIterator("{$this->directory}/{$this->poolName}");
+        $directory = new \RecursiveDirectoryIterator($this->directory);
 
         // Return false if has subdirectories
-        if ($directory->hasChildren()) {
-            return false;
+        /** @var \SplFileInfo $file */
+        foreach ($directory as $element) {
+            // Skip '.' and '..' directories
+            if (in_array($element->getFilename(), ['.', '..'])) {
+                continue;
+            }
+
+            if ($element->isDir()) return false;
         }
 
         // Remove all files
-        /** @var \RecursiveDirectoryIterator $file */
-        foreach ($directory as $file) {
+        /** @var \SplFileInfo $element */
+        foreach ($directory as $element) {
             // Skip '.' and '..' directories
-            if ($file->isDot()) {
+            if (in_array($element->getFilename(), ['.', '..'])) {
                 continue;
             }
 
             // Delete the file
-            if ($file->isFile()) {
-                unlink($file->getFilename());
+            if ($element->isFile()) {
+                unlink($element->getPathname());
             }
         }
 
@@ -112,7 +118,14 @@ class FileSystemAdapter extends AbstractAdapter
      */
     public function deleteItem(string $key): bool
     {
-        return unlink($this->getFilenameFromKey($key));
+        $filename = $this->getFilenameFromKey($key);
+
+        if (!file_exists($filename)) {
+
+            return false;
+        }
+
+        return unlink($filename);
     }
 
     /**
@@ -166,7 +179,8 @@ class FileSystemAdapter extends AbstractAdapter
     protected function createCacheItemFromFile(string $path): CacheItemInterface
     {
         // Get Key, Value and $expireDate from the file
-        $key = end(explode('/', $path));
+        $parts = explode('/', $path);
+        $key = end($parts);
         list($value, $expireDate) = explode(PHP_EOL, file_get_contents($path));
 
         // Create a new CacheItem
@@ -206,6 +220,6 @@ class FileSystemAdapter extends AbstractAdapter
      */
     private function getFilenameFromKey($key)
     {
-        return "{$this->directory}/{$this->poolName}.{$this->keyEncode($key)}";
+        return "{$this->directory}/{$this->keyEncode($key)}";
     }
 }

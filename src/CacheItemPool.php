@@ -73,7 +73,7 @@ class CacheItemPool implements CacheItemPoolInterface
     /**
      * {@inheritdoc}
      */
-    public function deleteItem($key): true
+    public function deleteItem($key): bool
     {
         return $this->adapterInterface->deleteItem($key);
     }
@@ -129,6 +129,13 @@ class CacheItemPool implements CacheItemPoolInterface
         return $isSucceed;
     }
 
+    /**
+     * Create a CacheItemCollection
+     *
+     * @param array $items
+     *
+     * @return CacheItemCollectionInterface
+     */
     protected function createCacheItemCollectionInterface(array $items = []): CacheItemCollectionInterface
     {
         return new CacheItemCollection($items);

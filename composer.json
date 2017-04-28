@@ -21,7 +21,7 @@
   },
   "autoload-dev": {
     "psr-4": {
-      "Moon\\Cache\\Unit": "tests/Unit"
+      "Moon\\Cache\\Unit\\": "tests/Unit/"
     }
   }
 }
