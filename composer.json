@@ -3,7 +3,8 @@
   "description": "A very simple Cache with support for PSR-6",
   "require": {
     "php": ">=7.1",
-    "psr/cache": "^1.0"
+    "psr/cache": "^1.0",
+    "doctrine/dbal": "^2.5"
   },
   "require-dev": {
     "phpunit/phpunit": "^6.1"

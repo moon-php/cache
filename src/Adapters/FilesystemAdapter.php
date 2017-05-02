@@ -7,7 +7,7 @@ use Moon\Cache\Collection\CacheItemCollectionInterface;
 use Moon\Cache\Exception\CacheItemNotFoundException;
 use Psr\Cache\CacheItemInterface;
 
-class FileSystemAdapter extends AbstractAdapter
+class FilesystemAdapter extends AbstractAdapter
 {
     /**
      * Path to pool directory
