@@ -6,6 +6,7 @@ use Doctrine\DBAL\Connection;
 use Moon\Cache\CacheItem;
 use Moon\Cache\Collection\CacheItemCollectionInterface;
 use Moon\Cache\Exception\CacheItemNotFoundException;
+use Moon\Cache\Exception\CachePersistenceException;
 use Psr\Cache\CacheItemInterface;
 
 class DbalAdapter extends AbstractAdapter
@@ -43,11 +44,11 @@ class DbalAdapter extends AbstractAdapter
     /**
      * FileSystemAdapter constructor.
      * @param string $poolName
-     * @param \PDO $connection
+     * @param Connection $connection
      * @param array $tableOptions
      * @param null $expirationDateFormat
      */
-    public function __construct(string $poolName, \PDO $connection, array $tableOptions = [], $expirationDateFormat = null)
+    public function __construct(string $poolName, Connection $connection, array $tableOptions = [], $expirationDateFormat = null)
     {
         $this->poolName = $poolName;
         $this->connection = $connection;
@@ -65,37 +66,12 @@ class DbalAdapter extends AbstractAdapter
     /**
      * {@inheritdoc}
      */
-    public function getItem(string $key): CacheItemInterface
-    {
-        try {
-            $row = $this->connection->createQueryBuilder()
-                ->select('*')
-                ->from($this->tableOptions['tableName'])
-                ->where("{$this->tableOptions['keyColumn']} = :key")
-                ->setParameter(':key', $key, \PDO::PARAM_STR)
-                ->setFirstResult(1)
-                ->execute()
-                ->fetch(\PDO::FETCH_ASSOC);
-        } catch (\Exception $e) {
-            throw new \Exception(); // TODO Throw different exception
-        }
-
-        if (empty($row)) {
-            throw new CacheItemNotFoundException();
-        }
-
-        return $this->createCacheItemFromRow($row);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
     public function getItems(array $keys = []): CacheItemCollectionInterface
     {
         $stmt = $this->connection->createQueryBuilder()
             ->select('*')
-            ->from($this->tableOptions['tableName'])
-            ->where("{$this->tableOptions['keyColumn']} IN (:keys)")
+            ->from("`{$this->tableOptions['tableName']}`")
+            ->where("`{$this->tableOptions['keyColumn']}` IN (:keys)")
             ->setParameter(':keys', $keys, Connection::PARAM_STR_ARRAY)
             ->execute();
 
@@ -106,6 +82,23 @@ class DbalAdapter extends AbstractAdapter
         }
 
         return $cacheItemCollection;
+    }
+
+    /**
+     * Create a CacheItemInterface object from a row
+     *
+     * @param array $row
+     *
+     * @return CacheItemInterface
+     */
+    protected function createCacheItemFromRow(array $row): CacheItemInterface
+    {
+        // Create a new CacheItem
+        return new CacheItem(
+            $row[$this->tableOptions['keyColumn']],
+            $row[$this->tableOptions['valueColumn']],
+            new \DateTimeImmutable($row[$this->tableOptions['expirationColumn']])
+        );
     }
 
     /**
@@ -125,19 +118,42 @@ class DbalAdapter extends AbstractAdapter
     /**
      * {@inheritdoc}
      */
+    public function getItem(string $key): CacheItemInterface
+    {
+        try {
+            $row = $this->connection->createQueryBuilder()
+                ->select('*')
+                ->from("`{$this->tableOptions['tableName']}`")
+                ->where("`{$this->tableOptions['keyColumn']}` = :key")
+                ->setParameter(':key', $key, \PDO::PARAM_STR)
+                ->setFirstResult(0)
+                ->execute()
+                ->fetch(\PDO::FETCH_ASSOC);
+        } catch (\Exception $e) {
+            throw new CachePersistenceException($e->getMessage(), 0, $e);
+        }
+
+        if (empty($row)) {
+            throw new CacheItemNotFoundException();
+        }
+
+        return $this->createCacheItemFromRow($row);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function clear(): bool
     {
         try {
-            $deletedRows = $this->connection->createQueryBuilder()
-                ->delete($this->tableOptions['tableName'])
-                ->where("{$this->tableOptions['poolNameColumn']} = :poolName")
+            return (bool)$this->connection->createQueryBuilder()
+                ->delete("`{$this->tableOptions['tableName']}`")
+                ->where("`{$this->tableOptions['poolNameColumn']}` = :poolName")
                 ->setParameter(':poolName', $this->poolName, \PDO::PARAM_STR)
-                ->execute()->rowCount();
-
-            return (bool)$deletedRows;
+                ->execute();
 
         } catch (\Exception $e) {
-            throw new \Exception(); // TODO Throw different exception
+            throw new CachePersistenceException($e->getMessage(), 0, $e);
         }
     }
 
@@ -147,15 +163,14 @@ class DbalAdapter extends AbstractAdapter
     public function deleteItem(string $key): bool
     {
         try {
-            $deletedRows = $this->connection->createQueryBuilder()
-                ->delete($this->tableOptions['tableName'])
-                ->where("{$this->tableOptions['keyColumn']} = :key")
-                ->setParameter(':key', $$key, \PDO::PARAM_STR)
-                ->execute()->rowCount();
+            return (bool)$this->connection->createQueryBuilder()
+                ->delete("`{$this->tableOptions['tableName']}`")
+                ->where("`{$this->tableOptions['keyColumn']}` = :key")
+                ->setParameter(':key', $key, \PDO::PARAM_STR)
+                ->execute();
 
-            return (bool)$deletedRows;
         } catch (\Exception $e) {
-            throw new \Exception($e->getMessage()); // TODO Throw different exception
+            throw new CachePersistenceException($e->getMessage(), 0, $e);
         }
     }
 
@@ -166,33 +181,14 @@ class DbalAdapter extends AbstractAdapter
     {
         try {
             $deletedRows = $this->connection->createQueryBuilder()
-                ->delete($this->tableOptions['tableName'])
-                ->where("{$this->tableOptions['keyColumn']} IN (:keys)")
-                ->setParameter(':keys', $this->poolName, Connection::PARAM_STR_ARRAY)
-                ->execute()->rowCount();
+                ->delete("`{$this->tableOptions['tableName']}`")
+                ->where("`{$this->tableOptions['keyColumn']}` IN (:keys)")
+                ->setParameter(':keys', $keys, Connection::PARAM_STR_ARRAY)
+                ->execute();
 
             return (bool)$deletedRows;
         } catch (\Exception $e) {
-            throw new \Exception($e->getMessage()); // TODO Throw different exception
-        }
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function save(CacheItemInterface $item): bool
-    {
-        $data = [
-            $this->tableOptions['keyColumn'] => $item->getKey(),
-            $this->tableOptions['valueColumn'] => serialize($item->get()),
-            $this->tableOptions['poolNameColumn'] => $this->poolName,
-            $this->tableOptions['expirationColumn'] => $this->retrieveExpiringDateFromCacheItem($item)->format($this->expirationDateFormat)
-        ];
-
-        try {
-            return (bool)$this->connection->insert($this->tableOptions['tableName'], $data);
-        } catch (\Exception $e) {
-            throw new \Exception($e->getMessage()); // TODO Throw different exception
+            throw new CachePersistenceException($e->getMessage(), 0, $e);
         }
     }
 
@@ -221,19 +217,21 @@ class DbalAdapter extends AbstractAdapter
     }
 
     /**
-     * Create a CacheItemInterface object from a row
-     *
-     * @param array $row
-     *
-     * @return CacheItemInterface
+     * {@inheritdoc}
      */
-    protected function createCacheItemFromRow(array $row): CacheItemInterface
+    public function save(CacheItemInterface $item): bool
     {
-        // Create a new CacheItem
-        return new CacheItem(
-            $row[$this->tableOptions['keyColumn']],
-            $row[$this->tableOptions['valueColumn']],
-            $row[$this->tableOptions['expirationColumn']]
-        );
+        $data = [
+            "`{$this->tableOptions['keyColumn']}`" => $item->getKey(),
+            "`{$this->tableOptions['valueColumn']}`" => serialize($item->get()),
+            "`{$this->tableOptions['poolNameColumn']}`" => $this->poolName,
+            "`{$this->tableOptions['expirationColumn']}`" => $this->retrieveExpiringDateFromCacheItem($item)->format($this->expirationDateFormat)
+        ];
+
+        try {
+            return (bool)$this->connection->insert("`{$this->tableOptions['tableName']}`", $data);
+        } catch (\Exception $e) {
+            throw new CachePersistenceException($e->getMessage(), 0, $e);
+        }
     }
 }
