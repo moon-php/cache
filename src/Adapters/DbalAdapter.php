@@ -23,6 +23,8 @@ class DbalAdapter extends AbstractAdapter
     private $poolName;
 
     /**
+     * Default table values for caching system
+     *
      * @var array
      */
     private $tableOptions = [
