@@ -4,6 +4,7 @@ namespace Moon\Cache\Adapters;
 
 use Moon\Cache\CacheItem;
 use Moon\Cache\Collection\CacheItemCollectionInterface;
+use Moon\Cache\Exception\CacheInvalidArgumentException;
 use Moon\Cache\Exception\CacheItemNotFoundException;
 use Psr\Cache\CacheItemInterface;
 
@@ -17,16 +18,27 @@ class MemcacheAdapter extends AbstractAdapter
      * @var \Memcached
      */
     private $memcached;
+    /**
+     * @var string Separator of the "namespace" combined from "poolName" and "key"
+     */
+    private $separator;
+    /**
+     * @const INVALID_CHARS Contains all invalid key chars
+     */
+    const INVALID_CHARS = [' ', PHP_EOL, '\r', 0];
 
     /**
      * FileSystemAdapter constructor.
      * @param string $poolName
      * @param \Memcached $memcached
+     * @param string $separator
      */
-    public function __construct(string $poolName, \Memcached $memcached)
+    public function __construct(string $poolName, \Memcached $memcached, $separator = '##')
     {
+        $this->validateKey($poolName);
         $this->poolName = $poolName;
         $this->memcached = $memcached;
+        $this->separator = $separator;
     }
 
     /**
@@ -35,52 +47,14 @@ class MemcacheAdapter extends AbstractAdapter
     public function getItems(array $keys = []): CacheItemCollectionInterface
     {
         $this->normalizeKeyName($keys);
-
         $items = $this->memcached->getMultiByKey($this->poolName, $keys);
-
         $cacheItemCollection = $this->createCacheItemCollection();
 
-        foreach ($items as $item) {
-            $cacheItemCollection->add($this->createCacheItemFromValue($item));
+        foreach ($items as $k => $item) {
+            $cacheItemCollection->add($this->createCacheItemFromValue([$k => $item]));
         }
 
         return $cacheItemCollection;
-    }
-
-    /**
-     * Normalize the key, adding the poolName prefix
-     *
-     * @param $keys
-     *
-     * @return mixed
-     */
-    protected function normalizeKeyName(&$keys): void
-    {
-        if (is_array($keys)) {
-            foreach ($keys as $k => $key) {
-                $keys[$k] = $this->poolName . '_' . $key;
-            }
-        } else {
-            $keys = $this->poolName . '_' . $keys;
-        }
-    }
-
-    /**
-     * Create a CacheItemInterface object from an item
-     *
-     * @param array $item
-     *
-     * @return CacheItemInterface
-     */
-    protected function createCacheItemFromValue(array $item): CacheItemInterface
-    {
-        //
-        $key = str_replace($this->poolName . '_', '', array_keys($item)[0]);
-        $value = unserialize($item[0]);
-        $date = unserialize($item[1]);
-
-        // Create a new CacheItem
-        return new CacheItem($key, $value, $date);
     }
 
     /**
@@ -109,7 +83,7 @@ class MemcacheAdapter extends AbstractAdapter
             throw new CacheItemNotFoundException();
         }
 
-        return $this->createCacheItemFromValue($item);
+        return $this->createCacheItemFromValue([$key => $item]);
     }
 
     /**
@@ -125,7 +99,7 @@ class MemcacheAdapter extends AbstractAdapter
             }
         }
 
-        return $this->memcached->deleteMultiByKey($this->poolName, $keys);
+        return $this->deleteItems($keys);
     }
 
     /**
@@ -145,7 +119,14 @@ class MemcacheAdapter extends AbstractAdapter
     {
         $this->normalizeKeyName($keys);
 
-        return $this->memcached->deleteMultiByKey($this->poolName, $keys);
+        foreach ($this->memcached->deleteMultiByKey($this->poolName, $keys) as $deletedItem) {
+            if (!$deletedItem) {
+
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**
@@ -157,7 +138,7 @@ class MemcacheAdapter extends AbstractAdapter
 
         /** @var CacheItemInterface $item */
         foreach ($items as $k => $item) {
-            $elaboratedItems[$this->poolName . '_' . $item->getKey()] = [
+            $elaboratedItems[$this->poolName . $this->separator . $item->getKey()] = [
                 serialize($item->get()), serialize($this->retrieveExpiringDateFromCacheItem($item))
             ];
         }
@@ -170,12 +151,78 @@ class MemcacheAdapter extends AbstractAdapter
      */
     public function save(CacheItemInterface $item): bool
     {
-        $key = $this->poolName . '_' . $item->getKey();
+        $key = $this->poolName . $this->separator . $item->getKey();
         $value = [
             serialize($item->get()),
             serialize($this->retrieveExpiringDateFromCacheItem($item))
         ];
 
         return $this->memcached->setByKey($this->poolName, $key, $value);
+    }
+
+    /**
+     * Normalize the key, adding the poolName prefix
+     *
+     * @param $keys
+     *
+     * @return mixed
+     */
+    protected function normalizeKeyName(&$keys): void
+    {
+        if (is_array($keys)) {
+            foreach ($keys as $k => $key) {
+                $keys[$k] = $this->poolName . $this->separator . $key;
+            }
+        } else {
+            $keys = $this->poolName . $this->separator . $keys;
+        }
+    }
+
+    /**
+     * Create a CacheItemInterface object from an item
+     *
+     * @param array $item
+     *
+     * @return CacheItemInterface
+     */
+    protected function createCacheItemFromValue(array $item): CacheItemInterface
+    {
+        $originalKey = key($item);
+        $key = str_replace($this->poolName . $this->separator, '', $originalKey);
+        $value = unserialize($item[$originalKey][0]);
+        $date = unserialize($item[$originalKey][1]);
+
+        // Create a new CacheItem
+        return new CacheItem($key, $value, $date);
+    }
+
+    /**
+     * Check if a key is valid
+     *
+     * @param string $key
+     *
+     * @throws CacheInvalidArgumentException
+     */
+    protected function validateKey(string $key): void
+    {
+        foreach (self::INVALID_CHARS as $invalidChar) {
+            if (strpos($key, $invalidChar) !== false) {
+                throw new CacheInvalidArgumentException("$key, is invalid, it contains an invalid character '$invalidChar'");
+            }
+        }
+    }
+
+    /**
+     * Check if an array of keys is valid
+     *
+     * @param array $keys
+     *
+     * @throws CacheInvalidArgumentException
+     */
+    protected function validateKeys(array $keys): void
+    {
+        foreach ($keys as $key) {
+            $this->validateKey($key);
+        }
     }
 }
