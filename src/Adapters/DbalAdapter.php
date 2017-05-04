@@ -44,7 +44,7 @@ class DbalAdapter extends AbstractAdapter
     private $expirationDateFormat = 'Y-m-d H:i:s';
 
     /**
-     * FileSystemAdapter constructor.
+     * DbalAdapter constructor.
      * @param string $poolName
      * @param Connection $connection
      * @param array $tableOptions

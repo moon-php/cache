@@ -28,7 +28,7 @@ class MemcacheAdapter extends AbstractAdapter
     const INVALID_CHARS = [' ', PHP_EOL, '\r', 0];
 
     /**
-     * FileSystemAdapter constructor.
+     * MemcacheAdapter constructor.
      * @param string $poolName
      * @param \Memcached $memcached
      * @param string $separator
