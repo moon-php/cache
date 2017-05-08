@@ -18,7 +18,7 @@ class RedisAdapter extends AbstractAdapter
      */
     private $redis;
 
-    private $separator = '###';
+    private $separator = ':';
 
     /**
      * RedisAdapter constructor.
@@ -80,7 +80,7 @@ class RedisAdapter extends AbstractAdapter
      */
     public function clear(): bool
     {
-        $keys = $this->redis->keys($this->poolName . '*');
+        $keys = $this->redis->keys($this->poolName . $this->separator . '*');
         return (bool)$this->redis->delete($keys);
     }
 
@@ -110,14 +110,19 @@ class RedisAdapter extends AbstractAdapter
     public function saveItems(CacheItemCollectionInterface $items): bool
     {
         $mul = $this->redis->multi();
-        /** @var CacheItemInterface $item */
-        foreach ($items as $k => $item) {
-            $mul->set($this->poolName . $this->separator . $item->getKey(), serialize([
-                $item->get(), $this->retrieveExpiringDateFromCacheItem($item)
-            ]));
-        }
 
-        return !in_array(false, array_values($mul->exec()));
+        try {
+            /** @var CacheItemInterface $item */
+            foreach ($items as $k => $item) {
+                $key = $this->poolName . $this->separator . $item->getKey();
+                $value = [$item->get(), $this->retrieveExpiringDateFromCacheItem($item)];
+                $this->redis->set($key, serialize($value));
+            }
+            return !in_array(false, array_values($mul->exec()));
+        } catch (\Exception $e) {
+            $mul->discard();
+            return false;
+        }
     }
 
     /**
