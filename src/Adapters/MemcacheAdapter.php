@@ -33,7 +33,7 @@ class MemcacheAdapter extends AbstractAdapter
      * @param \Memcached $memcached
      * @param string $separator
      */
-    public function __construct(string $poolName, \Memcached $memcached, $separator = '##')
+    public function __construct(string $poolName, \Memcached $memcached, $separator = '.')
     {
         $this->validateKey($poolName);
         $this->poolName = $poolName;

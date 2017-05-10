@@ -10,6 +10,8 @@ use Psr\Cache\CacheItemPoolInterface;
 
 class CacheItemPool implements CacheItemPoolInterface
 {
+    use KeyValidator;
+
     /**
      * @var AdapterInterface
      */
@@ -43,6 +45,8 @@ class CacheItemPool implements CacheItemPoolInterface
      */
     public function getItem($key): CacheItemInterface
     {
+        $this->validateKey($key);
+
         return $this->adapterInterface->getItem($key);
     }
 
@@ -51,6 +55,10 @@ class CacheItemPool implements CacheItemPoolInterface
      */
     public function getItems(array $keys = []): CacheItemCollectionInterface
     {
+        foreach ($keys as $key) {
+            $this->validateKey($key);
+        }
+
         return $this->adapterInterface->getItems($keys);
     }
 
@@ -59,6 +67,8 @@ class CacheItemPool implements CacheItemPoolInterface
      */
     public function hasItem($key): bool
     {
+        $this->validateKey($key);
+
         return $this->adapterInterface->hasItem($key);
     }
 
@@ -75,6 +85,8 @@ class CacheItemPool implements CacheItemPoolInterface
      */
     public function deleteItem($key): bool
     {
+        $this->validateKey($key);
+
         return $this->adapterInterface->deleteItem($key);
     }
 
@@ -83,6 +95,10 @@ class CacheItemPool implements CacheItemPoolInterface
      */
     public function deleteItems(array $keys): bool
     {
+        foreach ($keys as $key) {
+            $this->validateKey($key);
+        }
+        
         return $this->adapterInterface->deleteItems($keys);
     }
 

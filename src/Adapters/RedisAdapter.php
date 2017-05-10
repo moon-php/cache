@@ -18,7 +18,7 @@ class RedisAdapter extends AbstractAdapter
      */
     private $redis;
 
-    private $separator = ':';
+    private $separator = '.';
 
     /**
      * RedisAdapter constructor.

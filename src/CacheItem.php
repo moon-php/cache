@@ -7,6 +7,8 @@ use Psr\Cache\CacheItemInterface;
 
 class CacheItem implements CacheItemInterface
 {
+    use KeyValidator;
+
     /**
      * @var string $key
      */
@@ -42,6 +44,7 @@ class CacheItem implements CacheItemInterface
      */
     public function __construct(string $key, $value, \DateTimeImmutable $expiration = null, bool $hit = false)
     {
+        $this->validateKey($key);
         $this->key = $key;
         $this->value = $value;
         $this->hit = $hit;
