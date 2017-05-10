@@ -36,7 +36,7 @@ interface AdapterInterface
      *
      * @return bool
      */
-    public function hasItem($key): bool;
+    public function hasItem(string $key): bool;
 
     /**
      * Remove all CacheItem of a pool

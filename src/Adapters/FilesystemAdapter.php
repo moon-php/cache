@@ -72,7 +72,7 @@ class FilesystemAdapter extends AbstractAdapter
     /**
      * {@inheritdoc}
      */
-    public function hasItem($key): bool
+    public function hasItem(string $key): bool
     {
         return file_exists($this->getFilenameFromKey($key));
     }
@@ -135,8 +135,8 @@ class FilesystemAdapter extends AbstractAdapter
     public function deleteItems(array $keys): bool
     {
         foreach ($keys as $key) {
-
             if (!$this->deleteItem($key)) {
+                
                 return false;
             }
         }

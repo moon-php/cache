@@ -53,7 +53,7 @@ class RedisAdapter extends AbstractAdapter
     /**
      * {@inheritdoc}
      */
-    public function hasItem($key): bool
+    public function hasItem(string $key): bool
     {
         $this->normalizeKeyName($keys);
 

@@ -24,7 +24,7 @@ trait KeyValidator
         }
 
         // If string contains invalid character throws the exception
-        if (preg_match('#^[A-Za-z0-9._]+$#', $key)) {
+        if (!preg_match('#^[A-Za-z0-9._]+$#', $key)) {
             throw new CacheInvalidArgumentException("The key $key contains invalid characters. Supported characters are A-Z a-z 0-9 _ and .");
         }
     }

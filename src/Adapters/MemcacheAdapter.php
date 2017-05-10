@@ -60,7 +60,7 @@ class MemcacheAdapter extends AbstractAdapter
     /**
      * {@inheritdoc}
      */
-    public function hasItem($key): bool
+    public function hasItem(string $key): bool
     {
         $this->normalizeKeyName($keys);
         $item = $this->memcached->getByKey($this->poolName, $key);
@@ -91,11 +91,15 @@ class MemcacheAdapter extends AbstractAdapter
      */
     public function clear(): bool
     {
-        // Get all keys and get only the one of this pool (comparing the prefix of the key with the poolName)
+        // Get all keys
+        // Remove all the keys not related to this pool
+        // Clean all related key by "poolName + separator" (so the deleteItems method will not append them twice)
         $keys = $this->memcached->getAllKeys();
         foreach ($keys as $k => $key) {
             if (strpos($key, $this->poolName) !== 0) {
                 unset($keys[$k]);
+            } else {
+                $keys[$k] = str_replace($this->poolName . $this->separator, '', $keys[$k]);
             }
         }
 
@@ -209,20 +213,6 @@ class MemcacheAdapter extends AbstractAdapter
             if (strpos($key, $invalidChar) !== false) {
                 throw new CacheInvalidArgumentException("$key, is invalid, it contains an invalid character '$invalidChar'");
             }
-        }
-    }
-
-    /**
-     * Check if an array of keys is valid
-     *
-     * @param array $keys
-     *
-     * @throws CacheInvalidArgumentException
-     */
-    protected function validateKeys(array $keys): void
-    {
-        foreach ($keys as $key) {
-            $this->validateKey($key);
         }
     }
 }

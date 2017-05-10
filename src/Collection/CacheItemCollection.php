@@ -38,6 +38,40 @@ class CacheItemCollection implements CacheItemCollectionInterface
     /**
      * {@inheritdoc}
      */
+    public function has(string $key): bool
+    {
+        return isset($this->items[$key]);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function get(string $key): CacheItemInterface
+    {
+        if ($this->has($key)) {
+            return $this->items[$key];
+        }
+
+        throw new \InvalidArgumentException("The key $key is not available in the collection");
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function delete(string $key): bool
+    {
+        if ($this->has($key)) {
+            unset($this->items[$key]);
+
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function getIterator()
     {
         foreach ($this->items as $key => $item) {

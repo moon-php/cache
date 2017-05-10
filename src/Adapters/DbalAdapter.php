@@ -106,7 +106,7 @@ class DbalAdapter extends AbstractAdapter
     /**
      * {@inheritdoc}
      */
-    public function hasItem($key): bool
+    public function hasItem(string $key): bool
     {
         try {
             $this->getItem($key);
