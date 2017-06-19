@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Moon\Cache;
 
 use Moon\Cache\Exception\CacheInvalidArgumentException;
