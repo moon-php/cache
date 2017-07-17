@@ -7,7 +7,7 @@ namespace Moon\Cache\Adapters;
 use Closure;
 use Moon\Cache\Collection\CacheItemCollection;
 use Moon\Cache\Collection\CacheItemCollectionInterface;
-use Moon\Cache\Exception\CacheInvalidArgumentException;
+use Moon\Cache\Exception\InvalidArgumentException;
 use Psr\Cache\CacheItemInterface;
 
 abstract class AbstractAdapter implements AdapterInterface
@@ -26,6 +26,8 @@ abstract class AbstractAdapter implements AdapterInterface
      * @param array $items
      *
      * @return CacheItemCollectionInterface
+     *
+     * @throws InvalidArgumentException
      */
     protected function createCacheItemCollection(array $items = []): CacheItemCollectionInterface
     {
@@ -38,6 +40,8 @@ abstract class AbstractAdapter implements AdapterInterface
      * @param CacheItemInterface $cacheItem
      *
      * @return \DateTimeImmutable
+     *
+     * @throws InvalidArgumentException
      */
     protected function retrieveExpiringDateFromCacheItem(CacheItemInterface $cacheItem): \DateTimeImmutable
     {
@@ -52,7 +56,7 @@ abstract class AbstractAdapter implements AdapterInterface
 
             return $expirationDate;
         } catch (\Exception $e) {
-            throw new CacheInvalidArgumentException(
+            throw new InvalidArgumentException(
                 "The CacheItemInterface object haven't any {$this->expirationParameterName} attribute.", 0, $e
             );
         }

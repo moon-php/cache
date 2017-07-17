@@ -118,7 +118,7 @@ class CacheItemPool implements CacheItemPoolInterface
     public function saveDeferred(CacheItemInterface $item): bool
     {
         // Do not add if the last try of saving deferred items fails
-        if ($this->isSaveDeferredItemsFailed == true) {
+        if ($this->isSaveDeferredItemsFailed === true) {
             return false;
         }
 
@@ -153,6 +153,8 @@ class CacheItemPool implements CacheItemPoolInterface
      * @param array $items
      *
      * @return CacheItemCollectionInterface
+     *
+     * @throws InvalidArgumentException
      */
     protected function createCacheItemCollectionInterface(array $items = []): CacheItemCollectionInterface
     {

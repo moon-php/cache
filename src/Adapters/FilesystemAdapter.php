@@ -6,7 +6,8 @@ namespace Moon\Cache\Adapters;
 
 use Moon\Cache\CacheItem;
 use Moon\Cache\Collection\CacheItemCollectionInterface;
-use Moon\Cache\Exception\CacheItemNotFoundException;
+use Moon\Cache\Exception\InvalidArgumentException;
+use Moon\Cache\Exception\ItemNotFoundException;
 use Psr\Cache\CacheItemInterface;
 
 class FilesystemAdapter extends AbstractAdapter
@@ -47,7 +48,7 @@ class FilesystemAdapter extends AbstractAdapter
             return $this->createCacheItemFromFile($filename);
         }
 
-        throw new CacheItemNotFoundException();
+        throw new ItemNotFoundException();
     }
 
     /**
@@ -59,11 +60,11 @@ class FilesystemAdapter extends AbstractAdapter
         $cacheItemCollection = $this->createCacheItemCollection();
 
         // Add to the collection all items found
-        // Do not throw CacheItemNotFoundException if item is not found
+        // Do not throw ItemNotFoundException if item is not found
         foreach ($keys as $key) {
             try {
                 $cacheItemCollection->add($this->getItem($key));
-            } catch (CacheItemNotFoundException $e) {
+            } catch (ItemNotFoundException $e) {
                 continue;
             }
         }
@@ -91,18 +92,20 @@ class FilesystemAdapter extends AbstractAdapter
         /** @var \SplFileInfo $file */
         foreach ($directory as $element) {
             // Skip '.' and '..' directories
-            if (in_array($element->getFilename(), ['.', '..'])) {
+            if (in_array($element->getFilename(), ['.', '..'], true)) {
                 continue;
             }
 
-            if ($element->isDir()) return false;
+            if ($element->isDir()) {
+                return false;
+            }
         }
 
         // Remove all files
         /** @var \SplFileInfo $element */
         foreach ($directory as $element) {
             // Skip '.' and '..' directories
-            if (in_array($element->getFilename(), ['.', '..'])) {
+            if (in_array($element->getFilename(), ['.', '..'], true)) {
                 continue;
             }
 
@@ -138,7 +141,7 @@ class FilesystemAdapter extends AbstractAdapter
     {
         foreach ($keys as $key) {
             if (!$this->deleteItem($key)) {
-                
+
                 return false;
             }
         }
@@ -148,6 +151,8 @@ class FilesystemAdapter extends AbstractAdapter
 
     /**
      * {@inheritdoc}
+     *
+     * @throws InvalidArgumentException
      */
     public function save(CacheItemInterface $item): bool
     {
@@ -159,6 +164,8 @@ class FilesystemAdapter extends AbstractAdapter
     /**
      * THIS IS NOT TRANSACTION-SAFE
      * {@inheritdoc}
+     *
+     * @throws InvalidArgumentException
      */
     public function saveItems(CacheItemCollectionInterface $items): bool
     {
@@ -177,13 +184,15 @@ class FilesystemAdapter extends AbstractAdapter
      * @param string $path
      *
      * @return CacheItemInterface
+     *
+     * @throws InvalidArgumentException
      */
     protected function createCacheItemFromFile(string $path): CacheItemInterface
     {
         // Get Key, Value and $expireDate from the file
         $parts = explode('/', $path);
         $key = end($parts);
-        list($value, $expireDate) = explode(PHP_EOL, file_get_contents($path));
+        [$value, $expireDate] = explode(PHP_EOL, file_get_contents($path));
 
         // Create a new CacheItem
         return new CacheItem($this->keyDecode($key), unserialize($value), unserialize($expireDate));
@@ -220,7 +229,7 @@ class FilesystemAdapter extends AbstractAdapter
      *
      * @return string
      */
-    private function getFilenameFromKey($key)
+    private function getFilenameFromKey($key): string
     {
         return "{$this->directory}/{$this->keyEncode($key)}";
     }

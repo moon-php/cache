@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Moon\Cache\Adapters;
 
 use Moon\Cache\Collection\CacheItemCollectionInterface;
-use Moon\Cache\Exception\CacheItemNotFoundException;
+use Moon\Cache\Exception\ItemNotFoundException;
 use Psr\Cache\CacheItemInterface;
 
 class MemoryAdapter extends AbstractAdapter
@@ -32,7 +32,7 @@ class MemoryAdapter extends AbstractAdapter
         try {
             return $this->collection->get($key);
         } catch (\InvalidArgumentException $e) {
-            throw new CacheItemNotFoundException($e->getMessage(), $e->getCode(), $e);
+            throw new ItemNotFoundException($e->getMessage(), $e->getCode(), $e);
         }
 
     }
@@ -46,11 +46,11 @@ class MemoryAdapter extends AbstractAdapter
         $cacheItemCollection = $this->createCacheItemCollection();
 
         // Add to the collection all items found
-        // Do not throw CacheItemNotFoundException if item is not found
+        // Do not throw ItemNotFoundException if item is not found
         foreach ($keys as $key) {
             try {
                 $cacheItemCollection->add($this->getItem($key));
-            } catch (CacheItemNotFoundException $e) {
+            } catch (ItemNotFoundException $e) {
                 continue;
             }
         }

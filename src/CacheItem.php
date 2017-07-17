@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Moon\Cache;
 
-use Moon\Cache\Exception\CacheInvalidArgumentException;
+use Moon\Cache\Exception\InvalidArgumentException;
 use Psr\Cache\CacheItemInterface;
 
 class CacheItem implements CacheItemInterface
@@ -22,11 +22,6 @@ class CacheItem implements CacheItemInterface
     protected $value;
 
     /**
-     * @var bool $hit
-     */
-    protected $hit;
-
-    /**
      * @var \DateTimeImmutable $expiration
      */
     protected $expiration;
@@ -34,22 +29,22 @@ class CacheItem implements CacheItemInterface
     /**
      * Default value to use as default expiration date
      */
-    protected const DEFAULT_EXPIRATION = 'now +1 week';
+    public const DEFAULT_EXPIRATION = 'now +1 week';
 
     /**
      * CacheItem constructor.
      *
      * @param string $key
      * @param $value
-     * @param bool $hit
      * @param \DateTimeImmutable $expiration
+     *
+     * @throws InvalidArgumentException
      */
-    public function __construct(string $key, $value, \DateTimeImmutable $expiration = null, bool $hit = false)
+    public function __construct(string $key, $value, \DateTimeImmutable $expiration = null)
     {
         $this->validateKey($key);
         $this->key = $key;
         $this->value = $value;
-        $this->hit = $hit;
         $this->expiration = $expiration ?: new \DateTimeImmutable(static::DEFAULT_EXPIRATION);
     }
 
@@ -66,7 +61,7 @@ class CacheItem implements CacheItemInterface
      */
     public function get()
     {
-        return $this->value;
+        return $this->isHit() ? $this->value : null;
     }
 
     /**
@@ -74,7 +69,7 @@ class CacheItem implements CacheItemInterface
      */
     public function isHit(): bool
     {
-        return $this->hit;
+        return $this->expiration >= new \DateTimeImmutable();
     }
 
     /**
@@ -89,21 +84,19 @@ class CacheItem implements CacheItemInterface
 
     /**
      * {@inheritdoc}
+     *
+     * @throws InvalidArgumentException
      */
     public function expiresAt($expiration = null): CacheItemInterface
     {
-        if ($expiration instanceof \DateTimeInterface) {
+        if ($expiration instanceof \DateTimeImmutable) {
             $this->expiration = $expiration;
         } elseif ($expiration instanceof \DateTime) {
             $this->expiration = \DateTimeImmutable::createFromMutable($expiration);
-        } elseif ($expiration instanceof \DateInterval) {
-            $this->expiration = (new \DateTimeImmutable())->add($expiration);
-        } elseif (is_int($expiration)) {
-            $this->expiration = new \DateTimeImmutable("now +$expiration seconds");
         } elseif (null === $expiration) {
             $this->expiration = new \DateTimeImmutable(self::DEFAULT_EXPIRATION);
         } else {
-            throw new CacheInvalidArgumentException('Invalid expiration parameter for CacheItem.');
+            throw new InvalidArgumentException('Invalid expiration parameter for CacheItem.');
         }
 
         return $this;
@@ -111,9 +104,21 @@ class CacheItem implements CacheItemInterface
 
     /**
      * {@inheritdoc}
+     *
+     * @throws InvalidArgumentException
      */
-    public function expiresAfter($time): CacheItemInterface
+    public function expiresAfter($time = null): CacheItemInterface
     {
-        return $this->expiresAt($time);
+        if ($time instanceof \DateInterval) {
+            $this->expiration = (new \DateTimeImmutable())->add($time);
+        } elseif (is_int($time)) {
+            $this->expiration = new \DateTimeImmutable("now +$time seconds");
+        } elseif ($time === null) {
+            $this->expiration = new \DateTimeImmutable(static::DEFAULT_EXPIRATION);
+        } else {
+            throw new InvalidArgumentException('Invalid time for CacheItem.');
+        }
+
+        return $this;
     }
 }

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Moon\Cache\Collection;
 
 
-use Moon\Cache\Exception\CacheInvalidArgumentException;
+use Moon\Cache\Exception\InvalidArgumentException;
 use Psr\Cache\CacheItemInterface;
 
 class CacheItemCollection implements CacheItemCollectionInterface
@@ -18,12 +18,14 @@ class CacheItemCollection implements CacheItemCollectionInterface
     /**
      * CacheItemCollection constructor.
      * @param CacheItemInterface[] $items
+     *
+     * @throws InvalidArgumentException
      */
     public function __construct(array $items = [])
     {
         foreach ($items as $item) {
             if (!$item instanceof CacheItemInterface) {
-                throw new CacheInvalidArgumentException("Item $item be an instance of CacheItemInterface");
+                throw new InvalidArgumentException("Item $item be an instance of CacheItemInterface");
             }
             $this->items[$item->getKey()] = $item;
         }

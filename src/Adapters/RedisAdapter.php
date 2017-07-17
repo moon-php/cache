@@ -6,7 +6,8 @@ namespace Moon\Cache\Adapters;
 
 use Moon\Cache\CacheItem;
 use Moon\Cache\Collection\CacheItemCollectionInterface;
-use Moon\Cache\Exception\CacheItemNotFoundException;
+use Moon\Cache\Exception\InvalidArgumentException;
+use Moon\Cache\Exception\ItemNotFoundException;
 use Psr\Cache\CacheItemInterface;
 
 class RedisAdapter extends AbstractAdapter
@@ -71,7 +72,7 @@ class RedisAdapter extends AbstractAdapter
         $item = $this->redis->get($key);
 
         if ($item === false) {
-            throw new CacheItemNotFoundException();
+            throw new ItemNotFoundException();
         }
 
         return $this->createCacheItemFromValue([$key => $item]);
@@ -120,7 +121,7 @@ class RedisAdapter extends AbstractAdapter
                 $value = [$item->get(), $this->retrieveExpiringDateFromCacheItem($item)];
                 $this->redis->set($key, serialize($value));
             }
-            return !in_array(false, array_values($mul->exec()));
+            return !in_array(false, array_values($mul->exec()), true);
         } catch (\Exception $e) {
             $mul->discard();
             return false;
@@ -129,6 +130,8 @@ class RedisAdapter extends AbstractAdapter
 
     /**
      * {@inheritdoc}
+     *
+     * @throws InvalidArgumentException
      */
     public function save(CacheItemInterface $item): bool
     {
@@ -162,6 +165,8 @@ class RedisAdapter extends AbstractAdapter
      * @param array $item
      *
      * @return CacheItemInterface
+     *
+     * @throws InvalidArgumentException
      */
     protected function createCacheItemFromValue(array $item): CacheItemInterface
     {
