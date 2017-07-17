@@ -1,6 +1,8 @@
 {
   "name": "moon/cache",
   "description": "A very simple Cache with support for PSR-6",
+  "license": "MIT",
+  "homepage": "https://www.moon-php.com/",
   "require": {
     "php": ">=7.1",
     "psr/cache": "^1.0"
