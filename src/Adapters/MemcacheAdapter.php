@@ -6,8 +6,8 @@ namespace Moon\Cache\Adapters;
 
 use Moon\Cache\CacheItem;
 use Moon\Cache\Collection\CacheItemCollectionInterface;
-use Moon\Cache\Exception\CacheInvalidArgumentException;
-use Moon\Cache\Exception\CacheItemNotFoundException;
+use Moon\Cache\Exception\InvalidArgumentException;
+use Moon\Cache\Exception\ItemNotFoundException;
 use Psr\Cache\CacheItemInterface;
 
 class MemcacheAdapter extends AbstractAdapter
@@ -34,6 +34,8 @@ class MemcacheAdapter extends AbstractAdapter
      * @param string $poolName
      * @param \Memcached $memcached
      * @param string $separator
+     *
+     * @throws InvalidArgumentException
      */
     public function __construct(string $poolName, \Memcached $memcached, $separator = '.')
     {
@@ -67,22 +69,20 @@ class MemcacheAdapter extends AbstractAdapter
         $this->normalizeKeyName($keys);
         $item = $this->memcached->getByKey($this->poolName, $key);
 
-        if (!$item || \Memcached::RES_NOTFOUND == $item) {
-            return false;
-        }
-
-        return true;
+        return !(!$item || \Memcached::RES_NOTFOUND === $item);
     }
 
     /**
      * {@inheritdoc}
+     *
+     * @throws InvalidArgumentException
      */
     public function getItem(string $key): CacheItemInterface
     {
         $this->normalizeKeyName($key);
         $item = $this->memcached->getByKey($this->poolName, $key);
-        if (!$item || \Memcached::RES_NOTFOUND == $item) {
-            throw new CacheItemNotFoundException();
+        if (!$item || \Memcached::RES_NOTFOUND === $item) {
+            throw new ItemNotFoundException();
         }
 
         return $this->createCacheItemFromValue([$key => $item]);
@@ -125,8 +125,8 @@ class MemcacheAdapter extends AbstractAdapter
     {
         $this->normalizeKeyName($keys);
 
-        foreach ($this->memcached->deleteMultiByKey($this->poolName, $keys) as $deletedItem) {
-            if (!$deletedItem) {
+        foreach ($keys as $key) {
+            if (!$this->memcached->deleteMultiByKey($this->poolName, $key)) {
 
                 return false;
             }
@@ -137,6 +137,8 @@ class MemcacheAdapter extends AbstractAdapter
 
     /**
      * {@inheritdoc}
+     *
+     * @throws InvalidArgumentException
      */
     public function saveItems(CacheItemCollectionInterface $items): bool
     {
@@ -154,6 +156,8 @@ class MemcacheAdapter extends AbstractAdapter
 
     /**
      * {@inheritdoc}
+     *
+     * @throws InvalidArgumentException
      */
     public function save(CacheItemInterface $item): bool
     {
@@ -190,6 +194,8 @@ class MemcacheAdapter extends AbstractAdapter
      * @param array $item
      *
      * @return CacheItemInterface
+     *
+     * @throws InvalidArgumentException
      */
     protected function createCacheItemFromValue(array $item): CacheItemInterface
     {
@@ -207,13 +213,13 @@ class MemcacheAdapter extends AbstractAdapter
      *
      * @param string $key
      *
-     * @throws CacheInvalidArgumentException
+     * @throws InvalidArgumentException
      */
     protected function validateKey(string $key): void
     {
         foreach (self::INVALID_CHARS as $invalidChar) {
             if (strpos($key, $invalidChar) !== false) {
-                throw new CacheInvalidArgumentException("$key, is invalid, it contains an invalid character '$invalidChar'");
+                throw new InvalidArgumentException("$key, is invalid, it contains an invalid character '$invalidChar'");
             }
         }
     }

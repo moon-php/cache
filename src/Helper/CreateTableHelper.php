@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Moon\Cache\Helper;
 
 use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\DBALException;
 use Doctrine\DBAL\Schema\Schema;
 
 class CreateTableHelper
@@ -24,10 +25,16 @@ class CreateTableHelper
     ];
 
     /**
+     * Create a table for cache
+     *
      * @param Connection $connection
      * @param array $tableOptions
+     *
+     * @return void
+     *
+     * @throws DBALException
      */
-    public function generate(Connection $connection, array $tableOptions = [])
+    public function generate(Connection $connection, array $tableOptions = []): void
     {
         // Merge default options with no-default
         $this->tableOptions = array_merge($this->tableOptions, $tableOptions);

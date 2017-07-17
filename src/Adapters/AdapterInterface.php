@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Moon\Cache\Adapters;
 
 use Moon\Cache\Collection\CacheItemCollectionInterface;
-use Moon\Cache\Exception\CacheItemNotFoundException;
+use Moon\Cache\Exception\ItemNotFoundException;
 use Psr\Cache\CacheItemInterface;
 
 interface AdapterInterface
@@ -17,7 +17,7 @@ interface AdapterInterface
      *
      * @return CacheItemInterface
      *
-     * @throws CacheItemNotFoundException
+     * @throws ItemNotFoundException
      */
     public function getItem(string $key): CacheItemInterface;
 

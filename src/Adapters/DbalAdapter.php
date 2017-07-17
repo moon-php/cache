@@ -7,8 +7,9 @@ namespace Moon\Cache\Adapters;
 use Doctrine\DBAL\Connection;
 use Moon\Cache\CacheItem;
 use Moon\Cache\Collection\CacheItemCollectionInterface;
-use Moon\Cache\Exception\CacheItemNotFoundException;
-use Moon\Cache\Exception\CachePersistenceException;
+use Moon\Cache\Exception\InvalidArgumentException;
+use Moon\Cache\Exception\ItemNotFoundException;
+use Moon\Cache\Exception\PersistenceException;
 use Psr\Cache\CacheItemInterface;
 
 class DbalAdapter extends AbstractAdapter
@@ -51,6 +52,7 @@ class DbalAdapter extends AbstractAdapter
      * @param Connection $connection
      * @param array $tableOptions
      * @param null $expirationDateFormat
+     * @throws InvalidArgumentException
      */
     public function __construct(string $poolName, Connection $connection, array $tableOptions = [], $expirationDateFormat = null)
     {
@@ -63,7 +65,7 @@ class DbalAdapter extends AbstractAdapter
             $checkValidFormat = \DateTimeImmutable::createFromFormat($this->expirationDateFormat, 'now');
             unset($checkValidFormat);
         } catch (\Exception $e) {
-            throw new CacheItemNotFoundException('Invalid expiration column format', 0, $e);
+            throw new InvalidArgumentException('Invalid expiration column format', 0, $e);
         }
     }
 
@@ -94,6 +96,8 @@ class DbalAdapter extends AbstractAdapter
      * @param array $row
      *
      * @return CacheItemInterface
+     *
+     * @throws InvalidArgumentException
      */
     protected function createCacheItemFromRow(array $row): CacheItemInterface
     {
@@ -107,12 +111,14 @@ class DbalAdapter extends AbstractAdapter
 
     /**
      * {@inheritdoc}
+     *
+     * @throws \Moon\Cache\Exception\PersistenceException
      */
     public function hasItem(string $key): bool
     {
         try {
             $this->getItem($key);
-        } catch (CacheItemNotFoundException $e) {
+        } catch (ItemNotFoundException $e) {
             return false;
         }
 
@@ -121,6 +127,8 @@ class DbalAdapter extends AbstractAdapter
 
     /**
      * {@inheritdoc}
+     *
+     * @throws \Moon\Cache\Exception\PersistenceException
      */
     public function getItem(string $key): CacheItemInterface
     {
@@ -134,11 +142,11 @@ class DbalAdapter extends AbstractAdapter
                 ->execute()
                 ->fetch(\PDO::FETCH_ASSOC);
         } catch (\Exception $e) {
-            throw new CachePersistenceException($e->getMessage(), 0, $e);
+            throw new PersistenceException($e->getMessage(), 0, $e);
         }
 
         if (empty($row)) {
-            throw new CacheItemNotFoundException();
+            throw new ItemNotFoundException();
         }
 
         return $this->createCacheItemFromRow($row);
@@ -146,6 +154,8 @@ class DbalAdapter extends AbstractAdapter
 
     /**
      * {@inheritdoc}
+     *
+     * @throws \Moon\Cache\Exception\PersistenceException
      */
     public function clear(): bool
     {
@@ -157,12 +167,14 @@ class DbalAdapter extends AbstractAdapter
                 ->execute();
 
         } catch (\Exception $e) {
-            throw new CachePersistenceException($e->getMessage(), 0, $e);
+            throw new PersistenceException($e->getMessage(), 0, $e);
         }
     }
 
     /**
      * {@inheritdoc}
+     *
+     * @throws \Moon\Cache\Exception\PersistenceException
      */
     public function deleteItem(string $key): bool
     {
@@ -174,12 +186,14 @@ class DbalAdapter extends AbstractAdapter
                 ->execute();
 
         } catch (\Exception $e) {
-            throw new CachePersistenceException($e->getMessage(), 0, $e);
+            throw new PersistenceException($e->getMessage(), 0, $e);
         }
     }
 
     /**
      * {@inheritdoc}
+     *
+     * @throws \Moon\Cache\Exception\PersistenceException
      */
     public function deleteItems(array $keys): bool
     {
@@ -192,7 +206,7 @@ class DbalAdapter extends AbstractAdapter
 
             return (bool)$deletedRows;
         } catch (\Exception $e) {
-            throw new CachePersistenceException($e->getMessage(), 0, $e);
+            throw new PersistenceException($e->getMessage(), 0, $e);
         }
     }
 
@@ -222,6 +236,9 @@ class DbalAdapter extends AbstractAdapter
 
     /**
      * {@inheritdoc}
+     *
+     * @throws PersistenceException
+     * @throws InvalidArgumentException
      */
     public function save(CacheItemInterface $item): bool
     {
@@ -235,7 +252,7 @@ class DbalAdapter extends AbstractAdapter
         try {
             return (bool)$this->connection->insert("`{$this->tableOptions['tableName']}`", $data);
         } catch (\Exception $e) {
-            throw new CachePersistenceException($e->getMessage(), 0, $e);
+            throw new PersistenceException($e->getMessage(), 0, $e);
         }
     }
 }
