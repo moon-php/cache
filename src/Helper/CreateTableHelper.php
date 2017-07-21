@@ -6,7 +6,6 @@ namespace Moon\Cache\Helper;
 
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\DBALException;
-use Doctrine\DBAL\Schema\Schema;
 
 class CreateTableHelper
 {
@@ -40,7 +39,7 @@ class CreateTableHelper
         $this->tableOptions = array_merge($this->tableOptions, $tableOptions);
 
         // Build query for create table
-        $schema = new Schema();
+        $schema = $connection->getSchemaManager()->createSchema();
         $myTable = $schema->createTable("`{$this->tableOptions['tableName']}`");
         $myTable->addColumn("`{$this->tableOptions['idColumn']}`", 'bigint', ['unsigned' => true, 'autoincrement' => true]);
         $myTable->addColumn("`{$this->tableOptions['keyColumn']}`", 'string', ['notnull' => false]);

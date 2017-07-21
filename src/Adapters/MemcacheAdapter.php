@@ -30,6 +30,7 @@ class MemcacheAdapter extends AbstractAdapter
 
     /**
      * MemcacheAdapter constructor.
+     *
      * @param string $poolName
      * @param \Memcached $memcached
      * @param string $separator
@@ -143,8 +144,11 @@ class MemcacheAdapter extends AbstractAdapter
     {
         $elaboratedItems = [];
 
-        /** @var CacheItemInterface $item */
         foreach ($items as $k => $item) {
+            if (!$item instanceof CacheItemInterface) {
+                throw new InvalidArgumentException('All items must implement' . CacheItemInterface::class, $item);
+            }
+
             $elaboratedItems[$this->poolName . $this->separator . $item->getKey()] = [
                 serialize($item->get()), serialize($this->retrieveExpiringDateFromCacheItem($item))
             ];

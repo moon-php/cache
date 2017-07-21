@@ -25,6 +25,7 @@ class FilesystemAdapter extends AbstractAdapter
 
     /**
      * FileSystemAdapter constructor.
+     *
      * @param string $poolName
      * @param null|string $directory
      */
@@ -169,6 +170,10 @@ class FilesystemAdapter extends AbstractAdapter
     public function saveItems(array $items): bool
     {
         foreach ($items as $item) {
+            if (!$item instanceof CacheItemInterface) {
+                throw new InvalidArgumentException('All items must implement' . CacheItemInterface::class, $item);
+            }
+
             if (!$this->save($item)) {
                 return false;
             }

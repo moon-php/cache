@@ -47,10 +47,12 @@ class DbalAdapter extends AbstractAdapter
 
     /**
      * DbalAdapter constructor.
+     *
      * @param string $poolName
      * @param Connection $connection
      * @param array $tableOptions
      * @param null $expirationDateFormat
+     *
      * @throws InvalidArgumentException
      */
     public function __construct(string $poolName, Connection $connection, array $tableOptions = [], $expirationDateFormat = null)
@@ -64,7 +66,7 @@ class DbalAdapter extends AbstractAdapter
             $checkValidFormat = \DateTimeImmutable::createFromFormat($this->expirationDateFormat, 'now');
             unset($checkValidFormat);
         } catch (\Exception $e) {
-            throw new InvalidArgumentException('Invalid expiration column format', 0, $e);
+            throw new InvalidArgumentException('Invalid expiration column format', null, 0, $e);
         }
     }
 
@@ -217,6 +219,10 @@ class DbalAdapter extends AbstractAdapter
         $this->connection->beginTransaction();
         try {
             foreach ($items as $item) {
+                if (!$item instanceof CacheItemInterface) {
+                    throw new InvalidArgumentException('All items must implement' . CacheItemInterface::class, $item);
+                }
+
                 if (!$this->save($item)) {
                     $this->connection->rollBack();
 
