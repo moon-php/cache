@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Moon\Cache\Adapters;
 
-use Moon\Cache\Collection\CacheItemCollectionInterface;
+use Moon\Cache\Exception\InvalidArgumentException;
 use Moon\Cache\Exception\ItemNotFoundException;
 use Psr\Cache\CacheItemInterface;
 
@@ -22,13 +22,13 @@ interface AdapterInterface
     public function getItem(string $key): CacheItemInterface;
 
     /**
-     * Return a CacheItemCollection from an array
+     * Return a array from an array of keys
      *
      * @param string[] $keys
      *
-     * @return CacheItemCollectionInterface
+     * @return array
      */
-    public function getItems(array $keys = []): CacheItemCollectionInterface;
+    public function getItems(array $keys = []): array;
 
 
     /**
@@ -78,9 +78,11 @@ interface AdapterInterface
     /**
      * Add new CacheItems to the pool
      *
-     * @param CacheItemCollectionInterface $items
+     * @param array $items
      *
      * @return bool
+     *
+     * @throws InvalidArgumentException
      */
-    public function saveItems(CacheItemCollectionInterface $items): bool;
+    public function saveItems(array $items): bool;
 }

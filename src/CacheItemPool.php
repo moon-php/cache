@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace Moon\Cache;
 
 use Moon\Cache\Adapters\AdapterInterface;
-use Moon\Cache\Collection\CacheItemCollection;
-use Moon\Cache\Collection\CacheItemCollectionInterface;
 use Psr\Cache\CacheItemInterface;
 use Psr\Cache\CacheItemPoolInterface;
 
@@ -17,12 +15,12 @@ class CacheItemPool implements CacheItemPoolInterface
     /**
      * @var AdapterInterface
      */
-    protected $adapterInterface;
+    protected $adapter;
 
     /**
      * List of items waiting to be saved
      *
-     * @var CacheItemCollectionInterface $deferredItems
+     * @var array $deferredItems
      */
     protected $deferredItems = [];
 
@@ -35,11 +33,11 @@ class CacheItemPool implements CacheItemPoolInterface
 
     /**
      * CacheItemPool constructor.
-     * @param AdapterInterface $adapterInterface
+     * @param AdapterInterface $adapter
      */
-    public function __construct(AdapterInterface $adapterInterface)
+    public function __construct(AdapterInterface $adapter)
     {
-        $this->adapterInterface = $adapterInterface;
+        $this->adapter = $adapter;
     }
 
     /**
@@ -49,19 +47,19 @@ class CacheItemPool implements CacheItemPoolInterface
     {
         $this->validateKey($key);
 
-        return $this->adapterInterface->getItem($key);
+        return $this->adapter->getItem($key);
     }
 
     /**
      * {@inheritdoc}
      */
-    public function getItems(array $keys = []): CacheItemCollectionInterface
+    public function getItems(array $keys = []): array
     {
         foreach ($keys as $key) {
             $this->validateKey($key);
         }
 
-        return $this->adapterInterface->getItems($keys);
+        return $this->adapter->getItems($keys);
     }
 
     /**
@@ -71,7 +69,7 @@ class CacheItemPool implements CacheItemPoolInterface
     {
         $this->validateKey($key);
 
-        return $this->adapterInterface->hasItem($key);
+        return $this->adapter->hasItem($key);
     }
 
     /**
@@ -79,7 +77,7 @@ class CacheItemPool implements CacheItemPoolInterface
      */
     public function clear(): bool
     {
-        return $this->adapterInterface->clear();
+        return $this->adapter->clear();
     }
 
     /**
@@ -89,7 +87,7 @@ class CacheItemPool implements CacheItemPoolInterface
     {
         $this->validateKey($key);
 
-        return $this->adapterInterface->deleteItem($key);
+        return $this->adapter->deleteItem($key);
     }
 
     /**
@@ -100,8 +98,8 @@ class CacheItemPool implements CacheItemPoolInterface
         foreach ($keys as $key) {
             $this->validateKey($key);
         }
-        
-        return $this->adapterInterface->deleteItems($keys);
+
+        return $this->adapter->deleteItems($keys);
     }
 
     /**
@@ -109,7 +107,7 @@ class CacheItemPool implements CacheItemPoolInterface
      */
     public function save(CacheItemInterface $item): bool
     {
-        return $this->adapterInterface->save($item);
+        return $this->adapter->save($item);
     }
 
     /**
@@ -122,12 +120,12 @@ class CacheItemPool implements CacheItemPoolInterface
             return false;
         }
 
-        // Create CacheItemCollectionInterface and assign it to deferredItems if is the first time
+        // Create array and assign it to deferredItems if is the first time
         if (!$this->deferredItems) {
-            $this->deferredItems = $this->createCacheItemCollectionInterface();
+            $this->deferredItems = [];
         }
 
-        // Add to collection and return
+        // Add to array and return
         $this->deferredItems->add($item);
 
         return true;
@@ -138,26 +136,12 @@ class CacheItemPool implements CacheItemPoolInterface
      */
     public function commit(): bool
     {
-        $isSucceed = $this->adapterInterface->saveItems($this->deferredItems);
+        $isSucceed = $this->adapter->saveItems($this->deferredItems);
 
         // If the commit fails, save isSaveDeferredItemsFailed as true
         // so that no other saveDeferred can be done as PSR-6 requires
         $this->isSaveDeferredItemsFailed = !$isSucceed;
 
         return $isSucceed;
-    }
-
-    /**
-     * Create a CacheItemCollection
-     *
-     * @param array $items
-     *
-     * @return CacheItemCollectionInterface
-     *
-     * @throws InvalidArgumentException
-     */
-    protected function createCacheItemCollectionInterface(array $items = []): CacheItemCollectionInterface
-    {
-        return new CacheItemCollection($items);
     }
 }

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Moon\Cache\Adapters;
 
 use Moon\Cache\CacheItem;
-use Moon\Cache\Collection\CacheItemCollectionInterface;
 use Moon\Cache\Exception\InvalidArgumentException;
 use Moon\Cache\Exception\ItemNotFoundException;
 use Psr\Cache\CacheItemInterface;
@@ -54,22 +53,22 @@ class FilesystemAdapter extends AbstractAdapter
     /**
      * {@inheritdoc}
      */
-    public function getItems(array $keys = []): CacheItemCollectionInterface
+    public function getItems(array $keys = []): array
     {
-        // Create an empty collection
-        $cacheItemCollection = $this->createCacheItemCollection();
+        // Create an empty array
+        $cacheItems = [];
 
-        // Add to the collection all items found
+        // Add to the array all items found
         // Do not throw ItemNotFoundException if item is not found
         foreach ($keys as $key) {
             try {
-                $cacheItemCollection->add($this->getItem($key));
+                $cacheItems[] = $this->getItem($key);
             } catch (ItemNotFoundException $e) {
                 continue;
             }
         }
 
-        return $cacheItemCollection;
+        return $cacheItems;
     }
 
     /**
@@ -167,7 +166,7 @@ class FilesystemAdapter extends AbstractAdapter
      *
      * @throws InvalidArgumentException
      */
-    public function saveItems(CacheItemCollectionInterface $items): bool
+    public function saveItems(array $items): bool
     {
         foreach ($items as $item) {
             if (!$this->save($item)) {

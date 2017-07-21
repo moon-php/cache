@@ -6,7 +6,6 @@ namespace Moon\Cache\Adapters;
 
 use Doctrine\DBAL\Connection;
 use Moon\Cache\CacheItem;
-use Moon\Cache\Collection\CacheItemCollectionInterface;
 use Moon\Cache\Exception\InvalidArgumentException;
 use Moon\Cache\Exception\ItemNotFoundException;
 use Moon\Cache\Exception\PersistenceException;
@@ -72,7 +71,7 @@ class DbalAdapter extends AbstractAdapter
     /**
      * {@inheritdoc}
      */
-    public function getItems(array $keys = []): CacheItemCollectionInterface
+    public function getItems(array $keys = []): array
     {
         $stmt = $this->connection->createQueryBuilder()
             ->select('*')
@@ -81,13 +80,13 @@ class DbalAdapter extends AbstractAdapter
             ->setParameter(':keys', $keys, Connection::PARAM_STR_ARRAY)
             ->execute();
 
-        $cacheItemCollection = $this->createCacheItemCollection();
+        $cacheItems = [];
 
         while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
-            $cacheItemCollection->add($this->createCacheItemFromRow($row));
+            $cacheItems[] = $this->createCacheItemFromRow($row);
         }
 
-        return $cacheItemCollection;
+        return $cacheItems;
     }
 
     /**
@@ -128,7 +127,7 @@ class DbalAdapter extends AbstractAdapter
     /**
      * {@inheritdoc}
      *
-     * @throws \Moon\Cache\Exception\PersistenceException
+     * @throws PersistenceException
      */
     public function getItem(string $key): CacheItemInterface
     {
@@ -213,7 +212,7 @@ class DbalAdapter extends AbstractAdapter
     /**
      * {@inheritdoc}
      */
-    public function saveItems(CacheItemCollectionInterface $items): bool
+    public function saveItems(array $items): bool
     {
         $this->connection->beginTransaction();
         try {

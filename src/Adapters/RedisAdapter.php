@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Moon\Cache\Adapters;
 
 use Moon\Cache\CacheItem;
-use Moon\Cache\Collection\CacheItemCollectionInterface;
 use Moon\Cache\Exception\InvalidArgumentException;
 use Moon\Cache\Exception\ItemNotFoundException;
 use Psr\Cache\CacheItemInterface;
@@ -21,6 +20,9 @@ class RedisAdapter extends AbstractAdapter
      */
     private $redis;
 
+    /**
+     * @var string
+     */
     private $separator = '.';
 
     /**
@@ -37,20 +39,20 @@ class RedisAdapter extends AbstractAdapter
     /**
      * {@inheritdoc}
      */
-    public function getItems(array $keys = []): CacheItemCollectionInterface
+    public function getItems(array $keys = []): array
     {
         $this->normalizeKeyName($keys);
         $items = $this->redis->getMultiple($keys);
 
-        $cacheItemCollection = $this->createCacheItemCollection();
+        $cacheItems = [];
 
         foreach ($items as $k => $item) {
             if ($item !== false) {
-                $cacheItemCollection->add($this->createCacheItemFromValue([$keys[$k] => $item]));
+                $cacheItems[] = $this->createCacheItemFromValue([$keys[$k] => $item]);
             }
         }
 
-        return $cacheItemCollection;
+        return $cacheItems;
     }
 
     /**
@@ -110,7 +112,7 @@ class RedisAdapter extends AbstractAdapter
     /**
      * {@inheritdoc}
      */
-    public function saveItems(CacheItemCollectionInterface $items): bool
+    public function saveItems(array $items): bool
     {
         $mul = $this->redis->multi();
 
