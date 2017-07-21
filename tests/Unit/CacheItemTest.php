@@ -7,7 +7,6 @@ namespace Moon\Cache;
 use Moon\Cache\Exception\InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 
-// TODO Refactor assert by time
 class CacheItemTest extends TestCase
 {
     /**
@@ -53,7 +52,7 @@ class CacheItemTest extends TestCase
         $reflectionExpiration->setAccessible(true);
         $item = new CacheItem('key', '', $date);
         $returnedDate = $reflectionExpiration->getValue($item);
-        $this->assertSame($expectedDate->format('Y-m-d H:i'), $returnedDate->format('Y-m-d H:i'));
+        $this->assertEquals($expectedDate->getTimestamp(), $returnedDate->getTimestamp(), '', 3);
     }
 
     /**
@@ -66,7 +65,7 @@ class CacheItemTest extends TestCase
         $item = new CacheItem('key', '');
         $item->expiresAt($date);
         $returnedDate = $reflectionExpiration->getValue($item);
-        $this->assertSame($expectedDate->format('Y-m-d H:i'), $returnedDate->format('Y-m-d H:i'));
+        $this->assertEquals($expectedDate->getTimestamp(), $returnedDate->getTimestamp(), '', 3);
     }
 
     public function testIsHit()
@@ -110,14 +109,14 @@ class CacheItemTest extends TestCase
         $item = new CacheItem('key', '');
         $item->expiresAfter($date);
         $returnedDate = $reflectionExpiration->getValue($item);
-        $this->assertSame($expectedDate->format('Y-m-d H:i'), $returnedDate->format('Y-m-d H:i'));
+        $this->assertEquals($expectedDate->getTimestamp(), $returnedDate->getTimestamp(), '', 3);
     }
 
     public function valueAcceptedByExpiresAfterDataProvider()
     {
         return [
-            [new \DateTimeImmutable(), 10],
-            [new \DateTimeImmutable(), new \DateInterval('PT1S')],
+            [new \DateTimeImmutable('+10 seconds'), 10],
+            [new \DateTimeImmutable('+1 second'), new \DateInterval('PT1S')],
             [new \DateTimeImmutable(CacheItem::DEFAULT_EXPIRATION), null],
         ];
     }
