@@ -17,6 +17,7 @@ class MemoryAdapter extends AbstractAdapter
 
     /**
      * MemoryAdapter constructor.
+     *
      * @param array $items
      */
     public function __construct(array $items)
@@ -126,8 +127,9 @@ class MemoryAdapter extends AbstractAdapter
         $clonedItems = $this->items;
         foreach ($items as $item) {
             if (!$item instanceof CacheItemInterface) {
-                throw new InvalidArgumentException('All items must implement' . CacheItemInterface::class);
+                throw new InvalidArgumentException('All items must implement' . CacheItemInterface::class, $item);
             }
+
             $clonedItems[] = $item;
         }
         $this->items = $clonedItems;

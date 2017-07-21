@@ -33,6 +33,7 @@ class CacheItemPool implements CacheItemPoolInterface
 
     /**
      * CacheItemPool constructor.
+     *
      * @param AdapterInterface $adapter
      */
     public function __construct(AdapterInterface $adapter)
@@ -120,13 +121,7 @@ class CacheItemPool implements CacheItemPoolInterface
             return false;
         }
 
-        // Create array and assign it to deferredItems if is the first time
-        if (!$this->deferredItems) {
-            $this->deferredItems = [];
-        }
-
-        // Add to array and return
-        $this->deferredItems->add($item);
+        $this->deferredItems[] = $item;
 
         return true;
     }
@@ -138,10 +133,16 @@ class CacheItemPool implements CacheItemPoolInterface
     {
         $isSucceed = $this->adapter->saveItems($this->deferredItems);
 
+        if ($isSucceed === true) {
+            $this->deferredItems = [];
+
+            return true;
+        }
+
         // If the commit fails, save isSaveDeferredItemsFailed as true
         // so that no other saveDeferred can be done as PSR-6 requires
-        $this->isSaveDeferredItemsFailed = !$isSucceed;
+        $this->isSaveDeferredItemsFailed = true;
 
-        return $isSucceed;
+        return false;
     }
 }

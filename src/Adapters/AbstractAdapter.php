@@ -41,7 +41,7 @@ abstract class AbstractAdapter implements AdapterInterface
             return $expirationDate;
         } catch (\Exception $e) {
             throw new InvalidArgumentException(
-                "The CacheItemInterface object haven't any {$this->expirationParameterName} attribute.", 0, $e
+                "The CacheItemInterface object haven't any {$this->expirationParameterName} attribute.", null, 0, $e
             );
         }
     }

@@ -27,6 +27,7 @@ class RedisAdapter extends AbstractAdapter
 
     /**
      * RedisAdapter constructor.
+     *
      * @param string $poolName
      * @param \Redis $redis
      */
@@ -86,6 +87,7 @@ class RedisAdapter extends AbstractAdapter
     public function clear(): bool
     {
         $keys = $this->redis->keys($this->poolName . $this->separator . '*');
+
         return (bool)$this->redis->delete($keys);
     }
 
@@ -119,13 +121,19 @@ class RedisAdapter extends AbstractAdapter
         try {
             /** @var CacheItemInterface $item */
             foreach ($items as $k => $item) {
+                if (!$item instanceof CacheItemInterface) {
+                    throw new InvalidArgumentException('All items must implement' . CacheItemInterface::class, $item);
+                }
+
                 $key = $this->poolName . $this->separator . $item->getKey();
                 $value = [$item->get(), $this->retrieveExpiringDateFromCacheItem($item)];
                 $this->redis->set($key, serialize($value));
             }
+
             return !in_array(false, array_values($mul->exec()), true);
         } catch (\Exception $e) {
             $mul->discard();
+
             return false;
         }
     }

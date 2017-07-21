@@ -22,7 +22,7 @@ class CacheItemTest extends TestCase
     /**
      * @dataProvider invalidCharKeyDataProvider
      */
-    public function testInvalidCharKeyThrowAnException($key)
+    public function testInvalidCharsThrowAnException($key)
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage("The key '$key' contains invalid characters. Supported characters are A-Z a-z 0-9 _ and .");
@@ -36,7 +36,7 @@ class CacheItemTest extends TestCase
         $this->assertSame($item->get(), 'a value');
     }
 
-    public function testThatSetMethodCreateANewObjectWithADifferentValue()
+    public function testThatSetMethodReturnAnObjectWithADifferentValue()
     {
         $item = new CacheItem('a_key', 'a value');
         $itemTwo = $item->set('another_value');
@@ -46,7 +46,7 @@ class CacheItemTest extends TestCase
     /**
      * @dataProvider expirationDateDataProvider
      */
-    public function testDefaultException($expectedDate, $date)
+    public function testDefaultExpirationDateIsProperlySet($expectedDate, $date)
     {
         $reflectionExpiration = new \ReflectionProperty(CacheItem::class, 'expiration');
         $reflectionExpiration->setAccessible(true);
@@ -56,7 +56,7 @@ class CacheItemTest extends TestCase
     }
 
     /**
-     * @dataProvider valueAcceptedByExpiresAtDataProvider
+     * @dataProvider expiresAtDataProvider
      */
     public function testExpiresAt($expectedDate, $date)
     {
@@ -77,7 +77,7 @@ class CacheItemTest extends TestCase
     }
 
     /**
-     * @dataProvider valueInvalidByExpiresAtDataProvider
+     * @dataProvider invalidExpiresAtValuesDataProvider
      */
     public function testExpiresAtThrowInvalidArgumentExcpetion($invalidDate)
     {
@@ -85,18 +85,6 @@ class CacheItemTest extends TestCase
 
         $item = new CacheItem('key', '');
         $item->expiresAt($invalidDate);
-    }
-
-
-    /**
-     * @dataProvider valueInvalidByExpiresAfterDataProvider
-     */
-    public function testExpiresAfterThrowInvalidArgumentExcpetion($invalidDate)
-    {
-        $this->expectException(InvalidArgumentException::class);
-
-        $item = new CacheItem('key', '');
-        $item->expiresAfter($invalidDate);
     }
 
     /**
@@ -112,6 +100,17 @@ class CacheItemTest extends TestCase
         $this->assertEquals($expectedDate->getTimestamp(), $returnedDate->getTimestamp(), '', 3);
     }
 
+    /**
+     * @dataProvider invalidExpiresAfterValuesDataProvider
+     */
+    public function testExpiresAfterThrowInvalidArgumentExcpetion($invalidDate)
+    {
+        $this->expectException(InvalidArgumentException::class);
+
+        $item = new CacheItem('key', '');
+        $item->expiresAfter($invalidDate);
+    }
+
     public function valueAcceptedByExpiresAfterDataProvider()
     {
         return [
@@ -121,7 +120,7 @@ class CacheItemTest extends TestCase
         ];
     }
 
-    public function valueInvalidByExpiresAfterDataProvider()
+    public function invalidExpiresAfterValuesDataProvider()
     {
         return [
             [[1, 2, 3]],
@@ -131,7 +130,7 @@ class CacheItemTest extends TestCase
         ];
     }
 
-    public function valueInvalidByExpiresAtDataProvider()
+    public function invalidExpiresAtValuesDataProvider()
     {
         return [
             [[1, 2, 3]],
@@ -141,7 +140,7 @@ class CacheItemTest extends TestCase
         ];
     }
 
-    public function valueAcceptedByExpiresAtDataProvider()
+    public function expiresAtDataProvider()
     {
         return [
             [new \DateTimeImmutable('now'), new \DateTime('now')],
