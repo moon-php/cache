@@ -4,24 +4,24 @@ declare(strict_types=1);
 
 namespace Moon\Cache\Adapters;
 
-use Moon\Cache\Collection\CacheItemCollectionInterface;
+use Moon\Cache\Exception\InvalidArgumentException;
 use Moon\Cache\Exception\ItemNotFoundException;
 use Psr\Cache\CacheItemInterface;
 
 class MemoryAdapter extends AbstractAdapter
 {
     /**
-     * @var CacheItemCollectionInterface
+     * @var array
      */
-    private $collection;
+    private $items;
 
     /**
      * MemoryAdapter constructor.
-     * @param CacheItemCollectionInterface $collection
+     * @param array $items
      */
-    public function __construct(CacheItemCollectionInterface $collection)
+    public function __construct(array $items)
     {
-        $this->collection = $collection;
+        $this->items = $items;
     }
 
     /**
@@ -29,33 +29,32 @@ class MemoryAdapter extends AbstractAdapter
      */
     public function getItem(string $key): CacheItemInterface
     {
-        try {
-            return $this->collection->get($key);
-        } catch (\InvalidArgumentException $e) {
-            throw new ItemNotFoundException($e->getMessage(), $e->getCode(), $e);
+        if (!isset($this->items[$key])) {
+            throw new ItemNotFoundException("The key $key is not available in the array");
         }
 
+        return $this->items[$key];
     }
 
     /**
      * {@inheritdoc}
      */
-    public function getItems(array $keys = []): CacheItemCollectionInterface
+    public function getItems(array $keys = []): array
     {
-        // Create an empty collection
-        $cacheItemCollection = $this->createCacheItemCollection();
+        // Create an empty items
+        $cacheItems = [];
 
-        // Add to the collection all items found
+        // Add to the items all items found
         // Do not throw ItemNotFoundException if item is not found
         foreach ($keys as $key) {
             try {
-                $cacheItemCollection->add($this->getItem($key));
+                $cacheItems[] = $this->getItem($key);
             } catch (ItemNotFoundException $e) {
                 continue;
             }
         }
 
-        return $cacheItemCollection;
+        return $cacheItems;
     }
 
     /**
@@ -63,7 +62,7 @@ class MemoryAdapter extends AbstractAdapter
      */
     public function hasItem(string $key): bool
     {
-        return $this->collection->has($key);
+        return isset($this->items[$key]);
     }
 
     /**
@@ -71,7 +70,7 @@ class MemoryAdapter extends AbstractAdapter
      */
     public function clear(): bool
     {
-        $this->collection = $this->createCacheItemCollection();
+        $this->items = [];
 
         return true;
     }
@@ -81,21 +80,29 @@ class MemoryAdapter extends AbstractAdapter
      */
     public function deleteItem(string $key): bool
     {
-        return $this->collection->delete($key);
+        if (isset($this[$key])) {
+            unset($this->items[$key]);
+
+            return true;
+        }
+
+        return false;
     }
 
     /**
-     * THIS IS NOT TRANSACTION-SAFE
      * {@inheritdoc}
      */
     public function deleteItems(array $keys): bool
     {
+        $clonedItems = $this->items;
         foreach ($keys as $key) {
-            if (!$this->deleteItem($key)) {
+            if (!isset($clonedItems[$key])) {
 
                 return false;
             }
+            unset($clonedItems[$key]);
         }
+        $this->items = $clonedItems;
 
         return true;
     }
@@ -105,23 +112,25 @@ class MemoryAdapter extends AbstractAdapter
      */
     public function save(CacheItemInterface $item): bool
     {
-        $this->collection->add($item);
+        $this->items[] = $item;
 
         return true;
     }
 
     /**
-     * THIS IS NOT TRANSACTION-SAFE
      * {@inheritdoc}
+     * @throws InvalidArgumentException
      */
-    public function saveItems(CacheItemCollectionInterface $items): bool
+    public function saveItems(array $items): bool
     {
+        $clonedItems = $this->items;
         foreach ($items as $item) {
-            if (!$this->save($item)) {
-
-                return false;
+            if (!$item instanceof CacheItemInterface) {
+                throw new InvalidArgumentException('All items must implement' . CacheItemInterface::class);
             }
+            $clonedItems[] = $item;
         }
+        $this->items = $clonedItems;
 
         return true;
     }

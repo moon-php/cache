@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Moon\Cache\Adapters;
 
 use Moon\Cache\CacheItem;
-use Moon\Cache\Collection\CacheItemCollectionInterface;
 use Moon\Cache\Exception\InvalidArgumentException;
 use Moon\Cache\Exception\ItemNotFoundException;
 use Psr\Cache\CacheItemInterface;
@@ -48,17 +47,17 @@ class MemcacheAdapter extends AbstractAdapter
     /**
      * {@inheritdoc}
      */
-    public function getItems(array $keys = []): CacheItemCollectionInterface
+    public function getItems(array $keys = []): array
     {
         $this->normalizeKeyName($keys);
         $items = $this->memcached->getMultiByKey($this->poolName, $keys);
-        $cacheItemCollection = $this->createCacheItemCollection();
+        $cacheItems = [];
 
         foreach ($items as $k => $item) {
-            $cacheItemCollection->add($this->createCacheItemFromValue([$k => $item]));
+            $cacheItems[] = $this->createCacheItemFromValue([$k => $item]);
         }
 
-        return $cacheItemCollection;
+        return $cacheItems;
     }
 
     /**
@@ -140,7 +139,7 @@ class MemcacheAdapter extends AbstractAdapter
      *
      * @throws InvalidArgumentException
      */
-    public function saveItems(CacheItemCollectionInterface $items): bool
+    public function saveItems(array $items): bool
     {
         $elaboratedItems = [];
 

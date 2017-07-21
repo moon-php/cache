@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace Moon\Cache\Adapters;
 
 use Closure;
-use Moon\Cache\Collection\CacheItemCollection;
-use Moon\Cache\Collection\CacheItemCollectionInterface;
 use Moon\Cache\Exception\InvalidArgumentException;
 use Psr\Cache\CacheItemInterface;
 
@@ -19,20 +17,6 @@ abstract class AbstractAdapter implements AdapterInterface
      * @var string $expirationParameterName
      */
     protected $expirationParameterName = 'expiration';
-
-    /**
-     * Create a CacheItemCollection from an array
-     *
-     * @param array $items
-     *
-     * @return CacheItemCollectionInterface
-     *
-     * @throws InvalidArgumentException
-     */
-    protected function createCacheItemCollection(array $items = []): CacheItemCollectionInterface
-    {
-        return new CacheItemCollection($items);
-    }
 
     /**
      * Return the expiringDate from an CacheItemObject
