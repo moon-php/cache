@@ -13,17 +13,7 @@ class MemoryAdapter extends AbstractAdapter
     /**
      * @var array
      */
-    private $items;
-
-    /**
-     * MemoryAdapter constructor.
-     *
-     * @param array $items
-     */
-    public function __construct(array $items)
-    {
-        $this->items = $items;
-    }
+    private $items = [];
 
     /**
      * {@inheritdoc}
@@ -81,7 +71,7 @@ class MemoryAdapter extends AbstractAdapter
      */
     public function deleteItem(string $key): bool
     {
-        if (isset($this[$key])) {
+        if (isset($this->items[$key])) {
             unset($this->items[$key]);
 
             return true;
@@ -113,7 +103,7 @@ class MemoryAdapter extends AbstractAdapter
      */
     public function save(CacheItemInterface $item): bool
     {
-        $this->items[] = $item;
+        $this->items[$item->getKey()] = $item;
 
         return true;
     }
@@ -130,7 +120,7 @@ class MemoryAdapter extends AbstractAdapter
                 throw new InvalidArgumentException('All items must implement' . CacheItemInterface::class, $item);
             }
 
-            $clonedItems[] = $item;
+            $clonedItems[$item->getKey()] = $item;
         }
         $this->items = $clonedItems;
 
