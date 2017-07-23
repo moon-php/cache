@@ -2,8 +2,15 @@
 
 declare(strict_types=1);
 
-use Moon\Cache\Helper\CreateTableHelper;
+namespace Moon\Cache\Helper;
+
+use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\Platforms\AbstractPlatform;
+use Doctrine\DBAL\Schema\AbstractSchemaManager;
+use Doctrine\DBAL\Schema\Schema;
+use Doctrine\DBAL\Schema\Table;
 use PHPUnit\Framework\TestCase;
+use Prophecy\Argument;
 
 class CreateTableHelperTest extends TestCase
 {
@@ -12,7 +19,7 @@ class CreateTableHelperTest extends TestCase
      */
     public function testQueryIsProperlyBuilt(array $tableOptions, array $expectedTableOptions)
     {
-        $table = $this->prophesize(\Doctrine\DBAL\Schema\Table::class);
+        $table = $this->prophesize(Table::class);
         $table->addColumn("`{$expectedTableOptions['idColumn']}`", 'bigint', ['unsigned' => true, 'autoincrement' => true])->shouldBeCalled(1);
         $table->addColumn("`{$expectedTableOptions['keyColumn']}`", 'string', ['notnull' => false])->shouldBeCalled(1);
         $table->addColumn("`{$expectedTableOptions['valueColumn']}`", 'text')->shouldBeCalled(1);
@@ -21,17 +28,17 @@ class CreateTableHelperTest extends TestCase
         $table->setPrimaryKey(["`{$expectedTableOptions['idColumn']}`"], true)->shouldBeCalled(1);
         $table->addUniqueIndex(["`{$expectedTableOptions['keyColumn']}`", "`{$expectedTableOptions['poolNameColumn']}`"], 'key_pool')->shouldBeCalled(1);
 
-        $schema = $this->prophesize(\Doctrine\DBAL\Schema\Schema::class);
+        $schema = $this->prophesize(Schema::class);
         $schema->createTable("`{$expectedTableOptions['tableName']}`")->shouldBeCalled(1)->willReturn($table->reveal());
-        $schema->toSql(\Prophecy\Argument::type(Doctrine\DBAL\Platforms\AbstractPlatform::class))->shouldBeCalled(1)->willReturn(['first', 'second']);
+        $schema->toSql(Argument::type(AbstractPlatform::class))->shouldBeCalled(1)->willReturn(['first', 'second']);
 
-        $schemaManager = $this->prophesize(\Doctrine\DBAL\Schema\AbstractSchemaManager::class);
+        $schemaManager = $this->prophesize(AbstractSchemaManager::class);
         $schemaManager->createSchema()->shouldBeCalled(1)->willReturn($schema->reveal());
 
-        $connection = $this->prophesize(\Doctrine\DBAL\Connection::class);
-        $connection->exec(\Prophecy\Argument::type('string'))->shouldBeCalled(1)->willReturn($schemaManager->reveal());
+        $connection = $this->prophesize(Connection::class);
+        $connection->exec(Argument::type('string'))->shouldBeCalled(1)->willReturn($schemaManager->reveal());
         $connection->getSchemaManager()->shouldBeCalled(1)->willReturn($schemaManager->reveal());
-        $connection->getDatabasePlatform()->shouldBeCalled(1)->willReturn($this->prophesize(Doctrine\DBAL\Platforms\AbstractPlatform::class)->reveal());
+        $connection->getDatabasePlatform()->shouldBeCalled(1)->willReturn($this->prophesize(AbstractPlatform::class)->reveal());
 
         $helper = new CreateTableHelper();
         $helper->generate($connection->reveal(), $tableOptions);

@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
-use Moon\Cache\Exception\InvalidArgumentException;
+namespace Moon\Cache\Exception;
+
+use Moon\Cache\CacheItem;
 use PHPUnit\Framework\TestCase;
 
 class InvalidArgumentExceptionTest extends TestCase
@@ -23,7 +25,7 @@ class InvalidArgumentExceptionTest extends TestCase
             ['string'],
             [['an', 'array']],
             [null],
-            [$this->prophesize(\Moon\Cache\CacheItem::class)->reveal()]
+            [$this->prophesize(CacheItem::class)->reveal()]
         ];
     }
 }

@@ -1,6 +1,6 @@
 {
   "name": "moon/cache",
-  "description": "A very simple Cache with support for PSR-6",
+  "description": "Cache supporting PSR-6",
   "license": "MIT",
   "homepage": "https://www.moon-php.com/",
   "require": {
@@ -17,7 +17,7 @@
   "authors": [
     {
       "name": "Damiano Petrungaro",
-      "email": "damiano.petrungaro@qwentes.it"
+      "email": "damiano.petrungaro@gmail.com"
     }
   ],
   "autoload": {
@@ -29,5 +29,12 @@
     "psr-4": {
       "Moon\\Cache\\Unit\\": "tests/Unit/"
     }
-  }
+  },
+  "prefer-stable": true,
+  "keywords": [
+    "cache",
+    "caching",
+    "psr-6",
+    "moon"
+  ]
 }
