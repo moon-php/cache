@@ -9,7 +9,7 @@ use Throwable;
 class InvalidArgumentException extends \InvalidArgumentException implements \Psr\Cache\InvalidArgumentException
 {
     /**
-     * @var mixed $invalidCacheItem
+     * @var mixed
      */
     private $invalidCacheItem;
 
@@ -20,7 +20,7 @@ class InvalidArgumentException extends \InvalidArgumentException implements \Psr
     }
 
     /**
-     * Get the invalid CacheItem
+     * Get the invalid CacheItem.
      *
      * @return mixed|null
      */

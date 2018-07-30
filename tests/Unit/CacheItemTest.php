@@ -134,7 +134,6 @@ class CacheItemTest extends TestCase
     {
         return [
             [[1, 2, 3]],
-            [12],
             [CacheItem::DEFAULT_EXPIRATION],
             [new \SplStack()],
         ];
@@ -143,9 +142,9 @@ class CacheItemTest extends TestCase
     public function expiresAtDataProvider()
     {
         return [
-            [new \DateTimeImmutable('now'), new \DateTime('now')],
+            [new \DateTimeImmutable('now'), new \DateTimeImmutable('now')],
             [new \DateTimeImmutable('+1 day'), new \DateTimeImmutable('+1 day')],
-            [new \DateTimeImmutable(CacheItem::DEFAULT_EXPIRATION), null]
+            [new \DateTimeImmutable(CacheItem::DEFAULT_EXPIRATION), null],
         ];
     }
 
@@ -154,7 +153,7 @@ class CacheItemTest extends TestCase
         return [
             [new \DateTimeImmutable('now'), new \DateTimeImmutable('now')],
             [new \DateTimeImmutable('+1 day'), new \DateTimeImmutable('+1 day')],
-            [new \DateTimeImmutable(CacheItem::DEFAULT_EXPIRATION), null]
+            [new \DateTimeImmutable(CacheItem::DEFAULT_EXPIRATION), null],
         ];
     }
 

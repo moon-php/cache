@@ -12,27 +12,21 @@ abstract class AbstractAdapter implements AdapterInterface
 {
     /**
      * Value used for get by reflection the expiration date in a CacheItem
-     * There's no method available from the PSR-6
+     * There's no method available from the PSR-6.
      *
-     * @var string $expirationParameterName
+     * @var string
      */
     protected $expirationParameterName = 'expiration';
 
     /**
-     * Return the expiringDate from an CacheItemObject
-     *
-     * @param CacheItemInterface $cacheItem
-     *
-     * @return \DateTimeImmutable
-     *
-     * @throws InvalidArgumentException
+     * Return the expiringDate from an CacheItemObject.
      */
     protected function retrieveExpiringDateFromCacheItem(CacheItemInterface $cacheItem): \DateTimeImmutable
     {
         try {
             $expirationDate = Closure::bind(function (CacheItemInterface $cacheItem, $expirationParameterName) {
                 return $cacheItem->$expirationParameterName;
-            }, null, $cacheItem)->__invoke($cacheItem, $this->expirationParameterName);
+            }, null, $cacheItem)($cacheItem, $this->expirationParameterName);
 
             if ($expirationDate instanceof \DateTime) {
                 $expirationDate = \DateTimeImmutable::createFromMutable($expirationDate);
@@ -47,11 +41,7 @@ abstract class AbstractAdapter implements AdapterInterface
     }
 
     /**
-     * Update the $expirationParameterName
-     *
-     * @param string $expirationParameterName
-     *
-     * @return void
+     * Update the $expirationParameterName.
      */
     public function setExpirationParameterName(string $expirationParameterName): void
     {

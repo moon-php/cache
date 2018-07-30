@@ -52,7 +52,7 @@ class CreateTableHelperTest extends TestCase
             'keyColumn' => 'key',
             'valueColumn' => 'value',
             'poolNameColumn' => 'pool_name',
-            'expirationColumn' => 'expires_at'
+            'expirationColumn' => 'expires_at',
         ];
 
         $two = [
@@ -61,15 +61,14 @@ class CreateTableHelperTest extends TestCase
             'keyColumn' => 'some',
             'valueColumn' => 'random',
             'poolNameColumn' => 'values',
-            'expirationColumn' => 'ok'
+            'expirationColumn' => 'ok',
         ];
 
         $three = [
             'tableName' => 'only',
             'poolNameColumn' => 'three',
-            'expirationColumn' => 'columns'
+            'expirationColumn' => 'columns',
         ];
-
 
         $expectedOne = [
             'tableName' => 'moon_cache',
@@ -77,7 +76,7 @@ class CreateTableHelperTest extends TestCase
             'keyColumn' => 'key',
             'valueColumn' => 'value',
             'poolNameColumn' => 'pool_name',
-            'expirationColumn' => 'expires_at'
+            'expirationColumn' => 'expires_at',
         ];
 
         $expectedTwo = [
@@ -86,7 +85,7 @@ class CreateTableHelperTest extends TestCase
             'keyColumn' => 'some',
             'valueColumn' => 'random',
             'poolNameColumn' => 'values',
-            'expirationColumn' => 'ok'
+            'expirationColumn' => 'ok',
         ];
 
         $expectedThree = [
@@ -95,7 +94,7 @@ class CreateTableHelperTest extends TestCase
             'keyColumn' => 'key',
             'valueColumn' => 'value',
             'poolNameColumn' => 'three',
-            'expirationColumn' => 'columns'
+            'expirationColumn' => 'columns',
         ];
 
         return [[$one, $expectedOne], [$two, $expectedTwo], [$three, $expectedThree]];

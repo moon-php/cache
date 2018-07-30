@@ -15,9 +15,6 @@ class MemoryAdapter extends AbstractAdapter
      */
     private $items = [];
 
-    /**
-     * {@inheritdoc}
-     */
     public function getItem(string $key): CacheItemInterface
     {
         if (!isset($this->items[$key])) {
@@ -48,17 +45,11 @@ class MemoryAdapter extends AbstractAdapter
         return $cacheItems;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function hasItem(string $key): bool
     {
         return isset($this->items[$key]);
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function clear(): bool
     {
         $this->items = [];
@@ -66,9 +57,6 @@ class MemoryAdapter extends AbstractAdapter
         return true;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function deleteItem(string $key): bool
     {
         if (isset($this->items[$key])) {
@@ -80,15 +68,11 @@ class MemoryAdapter extends AbstractAdapter
         return false;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function deleteItems(array $keys): bool
     {
         $clonedItems = $this->items;
         foreach ($keys as $key) {
             if (!isset($clonedItems[$key])) {
-
                 return false;
             }
             unset($clonedItems[$key]);
@@ -98,9 +82,6 @@ class MemoryAdapter extends AbstractAdapter
         return true;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function save(CacheItemInterface $item): bool
     {
         $this->items[$item->getKey()] = $item;
@@ -108,16 +89,12 @@ class MemoryAdapter extends AbstractAdapter
         return true;
     }
 
-    /**
-     * {@inheritdoc}
-     * @throws InvalidArgumentException
-     */
     public function saveItems(array $items): bool
     {
         $clonedItems = $this->items;
         foreach ($items as $item) {
             if (!$item instanceof CacheItemInterface) {
-                throw new InvalidArgumentException('All items must implement' . CacheItemInterface::class, $item);
+                throw new InvalidArgumentException('All items must implement'.CacheItemInterface::class, $item);
             }
 
             $clonedItems[$item->getKey()] = $item;

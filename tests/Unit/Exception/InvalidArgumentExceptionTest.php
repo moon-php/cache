@@ -25,7 +25,7 @@ class InvalidArgumentExceptionTest extends TestCase
             ['string'],
             [['an', 'array']],
             [null],
-            [$this->prophesize(CacheItem::class)->reveal()]
+            [$this->prophesize(CacheItem::class)->reveal()],
         ];
     }
 }
