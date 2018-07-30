@@ -12,48 +12,30 @@ use Psr\Cache\CacheItemInterface;
 class FilesystemAdapter extends AbstractAdapter
 {
     /**
-     * Path to pool directory
+     * Path to pool directory.
      *
-     * @var string $directory
+     * @var string
      */
     protected $directory;
 
-    /**
-     * @var string
-     */
-    private $poolName;
-
-    /**
-     * FileSystemAdapter constructor.
-     *
-     * @param string $poolName
-     * @param null|string $directory
-     */
     public function __construct(string $poolName, string $directory = null)
     {
-        $this->poolName = $poolName;
-        $this->directory = $directory ? "$directory/{$this->poolName}" : sys_get_temp_dir() . "/moon-cache/{$this->poolName}";
+        $this->directory = $directory ? "$directory/{$poolName}" : \sys_get_temp_dir()."/moon-cache/{$poolName}";
         // If directory doesn't exists, create it
-        is_dir($this->directory) ?: mkdir($this->directory, 0777, true);
+        \is_dir($this->directory) ?: \mkdir($this->directory, 0777, true);
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function getItem(string $key): CacheItemInterface
     {
         $filename = $this->getFilenameFromKey($key);
 
-        if (file_exists($filename)) {
+        if (\file_exists($filename)) {
             return $this->createCacheItemFromFile($filename);
         }
 
         throw new ItemNotFoundException();
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function getItems(array $keys = []): array
     {
         // Create an empty array
@@ -72,27 +54,21 @@ class FilesystemAdapter extends AbstractAdapter
         return $cacheItems;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function hasItem(string $key): bool
     {
-        return file_exists($this->getFilenameFromKey($key));
+        return \file_exists($this->getFilenameFromKey($key));
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function clear(): bool
     {
         // Create a RecursiveDirectoryIterator form the directory to clean up
         $directory = new \RecursiveDirectoryIterator($this->directory);
 
         // Return false if has subdirectories
-        /** @var \SplFileInfo $file */
+        /* @var \SplFileInfo $element */
         foreach ($directory as $element) {
             // Skip '.' and '..' directories
-            if (in_array($element->getFilename(), ['.', '..'], true)) {
+            if (\in_array($element->getFilename(), ['.', '..'], true)) {
                 continue;
             }
 
@@ -105,43 +81,37 @@ class FilesystemAdapter extends AbstractAdapter
         /** @var \SplFileInfo $element */
         foreach ($directory as $element) {
             // Skip '.' and '..' directories
-            if (in_array($element->getFilename(), ['.', '..'], true)) {
+            if (\in_array($element->getFilename(), ['.', '..'], true)) {
                 continue;
             }
 
             // Delete the file
             if ($element->isFile()) {
-                unlink($element->getPathname());
+                \unlink($element->getPathname());
             }
         }
 
-        return rmdir($directory->getPath());
+        return \rmdir($directory->getPath());
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function deleteItem(string $key): bool
     {
         $filename = $this->getFilenameFromKey($key);
 
-        if (!file_exists($filename)) {
-
+        if (!\file_exists($filename)) {
             return false;
         }
 
-        return unlink($filename);
+        return \unlink($filename);
     }
 
     /**
-     * THIS IS NOT TRANSACTION-SAFE
-     * {@inheritdoc}
+     * THIS IS NOT TRANSACTION-SAFE.
      */
     public function deleteItems(array $keys): bool
     {
         foreach ($keys as $key) {
             if (!$this->deleteItem($key)) {
-
                 return false;
             }
         }
@@ -149,29 +119,21 @@ class FilesystemAdapter extends AbstractAdapter
         return true;
     }
 
-    /**
-     * {@inheritdoc}
-     *
-     * @throws InvalidArgumentException
-     */
     public function save(CacheItemInterface $item): bool
     {
-        $content = serialize($item->get()) . PHP_EOL . serialize($this->retrieveExpiringDateFromCacheItem($item));
+        $content = \serialize($item->get()).PHP_EOL.\serialize($this->retrieveExpiringDateFromCacheItem($item));
 
-        return (bool)file_put_contents($this->getFilenameFromKey($item->getKey()), $content);
+        return (bool) \file_put_contents($this->getFilenameFromKey($item->getKey()), $content);
     }
 
     /**
-     * THIS IS NOT TRANSACTION-SAFE
-     * {@inheritdoc}
-     *
-     * @throws InvalidArgumentException
+     * THIS IS NOT TRANSACTION-SAFE.
      */
     public function saveItems(array $items): bool
     {
         foreach ($items as $item) {
             if (!$item instanceof CacheItemInterface) {
-                throw new InvalidArgumentException('All items must implement' . CacheItemInterface::class, $item);
+                throw new InvalidArgumentException('All items must implement'.CacheItemInterface::class, $item);
             }
 
             if (!$this->save($item)) {
@@ -183,55 +145,46 @@ class FilesystemAdapter extends AbstractAdapter
     }
 
     /**
-     * Create a CacheItemInterface object from a cached file
-     *
-     * @param string $path
-     *
-     * @return CacheItemInterface
-     *
-     * @throws InvalidArgumentException
+     * Create a CacheItemInterface object from a cached file.
      */
     protected function createCacheItemFromFile(string $path): CacheItemInterface
     {
         // Get Key, Value and $expireDate from the file
-        $parts = explode('/', $path);
-        $key = end($parts);
-        [$value, $expireDate] = explode(PHP_EOL, file_get_contents($path));
+        $parts = \explode('/', $path);
+        $key = \end($parts);
+        [$value, $expireDate] = \explode(PHP_EOL, \file_get_contents($path));
 
         // Create a new CacheItem
-        return new CacheItem($this->keyDecode($key), unserialize($value), unserialize($expireDate));
+        return new CacheItem(
+            $this->keyDecode($key),
+            \unserialize($value),
+            \unserialize($expireDate, [\DateTimeImmutable::class])
+        );
     }
 
     /**
-     * Encode a key
-     *
-     * @param string $key
-     *
-     * @return string
+     * Encode a key.
      */
     protected function keyEncode(string $key): string
     {
-        return base64_encode($key);
+        return \base64_encode($key);
     }
 
     /**
-     * Decode a key
-     *
-     * @param string $key
-     *
-     * @return string
+     * Decode a key.
      */
     protected function keyDecode(string $key): string
     {
-        return base64_decode($key);
+        $decodedKey = \base64_decode($key, true);
+        if (\is_bool($decodedKey)) {
+            throw new InvalidArgumentException("Given decodedKey $decodedKey is not a valid base64 string");
+        }
+
+        return $decodedKey;
     }
 
     /**
-     * Get the filename from a given key
-     *
-     * @param $key
-     *
-     * @return string
+     * Get the filename from a given key.
      */
     private function getFilenameFromKey($key): string
     {

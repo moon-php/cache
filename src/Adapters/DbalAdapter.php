@@ -14,18 +14,17 @@ use Psr\Cache\CacheItemInterface;
 class DbalAdapter extends AbstractAdapter
 {
     /**
-     * @var Connection $connection
+     * @var Connection
      */
     private $connection;
 
-
     /**
-     * @var string $poolName
+     * @var string
      */
     private $poolName;
 
     /**
-     * Default table values for caching system
+     * Default table values for caching system.
      *
      * @var array
      */
@@ -35,31 +34,25 @@ class DbalAdapter extends AbstractAdapter
         'keyColumn' => 'key',
         'valueColumn' => 'value',
         'poolNameColumn' => 'pool_name',
-        'expirationColumn' => 'expires_at'
+        'expirationColumn' => 'expires_at',
     ];
 
     /**
-     * Expiration format for database date
+     * Expiration format for database date.
      *
      * @var string
      */
     private $expirationDateFormat = 'Y-m-d H:i:s';
 
-    /**
-     * DbalAdapter constructor.
-     *
-     * @param string $poolName
-     * @param Connection $connection
-     * @param array $tableOptions
-     * @param null $expirationDateFormat
-     *
-     * @throws InvalidArgumentException
-     */
-    public function __construct(string $poolName, Connection $connection, array $tableOptions = [], $expirationDateFormat = null)
-    {
+    public function __construct(
+        string $poolName,
+        Connection $connection,
+        array $tableOptions = [],
+        $expirationDateFormat = null
+    ) {
         $this->poolName = $poolName;
         $this->connection = $connection;
-        $this->tableOptions = array_merge($this->tableOptions, $tableOptions);
+        $this->tableOptions = \array_merge($this->tableOptions, $tableOptions);
         $this->expirationDateFormat = $expirationDateFormat ?: $this->expirationDateFormat;
 
         try {
@@ -70,9 +63,6 @@ class DbalAdapter extends AbstractAdapter
         }
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function getItems(array $keys = []): array
     {
         $stmt = $this->connection->createQueryBuilder()
@@ -92,13 +82,7 @@ class DbalAdapter extends AbstractAdapter
     }
 
     /**
-     * Create a CacheItemInterface object from a row
-     *
-     * @param array $row
-     *
-     * @return CacheItemInterface
-     *
-     * @throws InvalidArgumentException
+     * Create a CacheItemInterface object from a row.
      */
     protected function createCacheItemFromRow(array $row): CacheItemInterface
     {
@@ -110,11 +94,6 @@ class DbalAdapter extends AbstractAdapter
         );
     }
 
-    /**
-     * {@inheritdoc}
-     *
-     * @throws \Moon\Cache\Exception\PersistenceException
-     */
     public function hasItem(string $key): bool
     {
         try {
@@ -126,11 +105,6 @@ class DbalAdapter extends AbstractAdapter
         return true;
     }
 
-    /**
-     * {@inheritdoc}
-     *
-     * @throws PersistenceException
-     */
     public function getItem(string $key): CacheItemInterface
     {
         try {
@@ -153,49 +127,32 @@ class DbalAdapter extends AbstractAdapter
         return $this->createCacheItemFromRow($row);
     }
 
-    /**
-     * {@inheritdoc}
-     *
-     * @throws \Moon\Cache\Exception\PersistenceException
-     */
     public function clear(): bool
     {
         try {
-            return (bool)$this->connection->createQueryBuilder()
+            return (bool) $this->connection->createQueryBuilder()
                 ->delete("`{$this->tableOptions['tableName']}`")
                 ->where("`{$this->tableOptions['poolNameColumn']}` = :poolName")
                 ->setParameter(':poolName', $this->poolName, \PDO::PARAM_STR)
                 ->execute();
-
         } catch (\Exception $e) {
             throw new PersistenceException($e->getMessage(), 0, $e);
         }
     }
 
-    /**
-     * {@inheritdoc}
-     *
-     * @throws \Moon\Cache\Exception\PersistenceException
-     */
     public function deleteItem(string $key): bool
     {
         try {
-            return (bool)$this->connection->createQueryBuilder()
+            return (bool) $this->connection->createQueryBuilder()
                 ->delete("`{$this->tableOptions['tableName']}`")
                 ->where("`{$this->tableOptions['keyColumn']}` = :key")
                 ->setParameter(':key', $key, \PDO::PARAM_STR)
                 ->execute();
-
         } catch (\Exception $e) {
             throw new PersistenceException($e->getMessage(), 0, $e);
         }
     }
 
-    /**
-     * {@inheritdoc}
-     *
-     * @throws \Moon\Cache\Exception\PersistenceException
-     */
     public function deleteItems(array $keys): bool
     {
         try {
@@ -205,22 +162,19 @@ class DbalAdapter extends AbstractAdapter
                 ->setParameter(':keys', $keys, Connection::PARAM_STR_ARRAY)
                 ->execute();
 
-            return (bool)$deletedRows;
+            return (bool) $deletedRows;
         } catch (\Exception $e) {
             throw new PersistenceException($e->getMessage(), 0, $e);
         }
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function saveItems(array $items): bool
     {
         $this->connection->beginTransaction();
         try {
             foreach ($items as $item) {
                 if (!$item instanceof CacheItemInterface) {
-                    throw new InvalidArgumentException('All items must implement' . CacheItemInterface::class, $item);
+                    throw new InvalidArgumentException('All items must implement'.CacheItemInterface::class, $item);
                 }
 
                 if (!$this->save($item)) {
@@ -239,23 +193,17 @@ class DbalAdapter extends AbstractAdapter
         return true;
     }
 
-    /**
-     * {@inheritdoc}
-     *
-     * @throws PersistenceException
-     * @throws InvalidArgumentException
-     */
     public function save(CacheItemInterface $item): bool
     {
         $data = [
             "`{$this->tableOptions['keyColumn']}`" => $item->getKey(),
-            "`{$this->tableOptions['valueColumn']}`" => serialize($item->get()),
+            "`{$this->tableOptions['valueColumn']}`" => \serialize($item->get()),
             "`{$this->tableOptions['poolNameColumn']}`" => $this->poolName,
-            "`{$this->tableOptions['expirationColumn']}`" => $this->retrieveExpiringDateFromCacheItem($item)->format($this->expirationDateFormat)
+            "`{$this->tableOptions['expirationColumn']}`" => $this->retrieveExpiringDateFromCacheItem($item)->format($this->expirationDateFormat),
         ];
 
         try {
-            return (bool)$this->connection->insert("`{$this->tableOptions['tableName']}`", $data);
+            return (bool) $this->connection->insert("`{$this->tableOptions['tableName']}`", $data);
         } catch (\Exception $e) {
             throw new PersistenceException($e->getMessage(), 0, $e);
         }

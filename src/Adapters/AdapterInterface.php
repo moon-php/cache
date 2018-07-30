@@ -6,24 +6,17 @@ namespace Moon\Cache\Adapters;
 
 use Moon\Cache\CacheItem;
 use Moon\Cache\Exception\InvalidArgumentException;
-use Moon\Cache\Exception\ItemNotFoundException;
 use Psr\Cache\CacheItemInterface;
 
 interface AdapterInterface
 {
     /**
-     * Return a CacheItem using his key
-     *
-     * @param string $key
-     *
-     * @return CacheItemInterface
-     *
-     * @throws ItemNotFoundException
+     * Return a CacheItem using his key.
      */
     public function getItem(string $key): CacheItemInterface;
 
     /**
-     * Return a array from an array of keys
+     * Return a array from an array of keys.
      *
      * @param string[] $keys
      *
@@ -32,50 +25,32 @@ interface AdapterInterface
     public function getItems(array $keys = []): array;
 
     /**
-     * Return true if CacheItem exists instead false
-     *
-     * @param $key
-     *
-     * @return bool
+     * Return true if CacheItem exists instead false.
      */
     public function hasItem(string $key): bool;
 
     /**
-     * Remove all CacheItem of a pool
-     *
-     * @return bool
+     * Remove all CacheItem of a pool.
      */
     public function clear(): bool;
 
     /**
-     * Delete a CacheItem using his key
-     *
-     * @param string $key
-     *
-     * @return bool
+     * Delete a CacheItem using his key.
      */
     public function deleteItem(string $key): bool;
 
     /**
-     * Delete a list of CacheItem using their keys
-     *
-     * @param string[] $keys
-     *
-     * @return bool
+     * Delete a list of CacheItem using their keys.
      */
     public function deleteItems(array $keys): bool;
 
     /**
-     * Add a new CacheItem to the pool
-     *
-     * @param CacheItemInterface $item
-     *
-     * @return bool
+     * Add a new CacheItem to the pool.
      */
     public function save(CacheItemInterface $item): bool;
 
     /**
-     * Add new CacheItems to the pool
+     * Add new CacheItems to the pool.
      *
      * @param CacheItem[] $items
      *

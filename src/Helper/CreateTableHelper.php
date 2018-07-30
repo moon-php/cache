@@ -5,12 +5,11 @@ declare(strict_types=1);
 namespace Moon\Cache\Helper;
 
 use Doctrine\DBAL\Connection;
-use Doctrine\DBAL\DBALException;
 
 class CreateTableHelper
 {
     /**
-     * Default table values for caching system
+     * Default table values for caching system.
      *
      * @var array
      */
@@ -20,23 +19,13 @@ class CreateTableHelper
         'keyColumn' => 'key',
         'valueColumn' => 'value',
         'poolNameColumn' => 'pool_name',
-        'expirationColumn' => 'expires_at'
+        'expirationColumn' => 'expires_at',
     ];
 
-    /**
-     * Create a table for cache
-     *
-     * @param Connection $connection
-     * @param array $tableOptions
-     *
-     * @return void
-     *
-     * @throws DBALException
-     */
     public function generate(Connection $connection, array $tableOptions = []): void
     {
         // Merge default options with no-default
-        $this->tableOptions = array_merge($this->tableOptions, $tableOptions);
+        $this->tableOptions = \array_merge($this->tableOptions, $tableOptions);
 
         // Build query for create table
         $schema = $connection->getSchemaManager()->createSchema();

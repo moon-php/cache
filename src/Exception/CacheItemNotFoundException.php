@@ -6,6 +6,6 @@ namespace Moon\Cache\Exception;
 
 use Psr\Cache\InvalidArgumentException;
 
-class PersistenceException extends \Exception implements InvalidArgumentException
+class CacheItemNotFoundException extends \InvalidArgumentException implements InvalidArgumentException
 {
 }

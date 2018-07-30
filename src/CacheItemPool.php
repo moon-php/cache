@@ -18,32 +18,24 @@ class CacheItemPool implements CacheItemPoolInterface
     protected $adapter;
 
     /**
-     * List of items waiting to be saved
+     * List of items waiting to be saved.
      *
-     * @var array $deferredItems
+     * @var array
      */
     protected $deferredItems = [];
 
     /**
-     * Set to true when a commit fails
+     * Set to true when a commit fails.
      *
-     * @var bool $isSaveDeferredItemsFailed
+     * @var bool
      */
     protected $isSaveDeferredItemsFailed = false;
 
-    /**
-     * CacheItemPool constructor.
-     *
-     * @param AdapterInterface $adapter
-     */
     public function __construct(AdapterInterface $adapter)
     {
         $this->adapter = $adapter;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function getItem($key): CacheItemInterface
     {
         $this->validateKey($key);
@@ -51,9 +43,6 @@ class CacheItemPool implements CacheItemPoolInterface
         return $this->adapter->getItem($key);
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function getItems(array $keys = []): array
     {
         foreach ($keys as $key) {
@@ -63,9 +52,6 @@ class CacheItemPool implements CacheItemPoolInterface
         return $this->adapter->getItems($keys);
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function hasItem($key): bool
     {
         $this->validateKey($key);
@@ -73,17 +59,11 @@ class CacheItemPool implements CacheItemPoolInterface
         return $this->adapter->hasItem($key);
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function clear(): bool
     {
         return $this->adapter->clear();
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function deleteItem($key): bool
     {
         $this->validateKey($key);
@@ -91,9 +71,6 @@ class CacheItemPool implements CacheItemPoolInterface
         return $this->adapter->deleteItem($key);
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function deleteItems(array $keys): bool
     {
         foreach ($keys as $key) {
@@ -103,21 +80,15 @@ class CacheItemPool implements CacheItemPoolInterface
         return $this->adapter->deleteItems($keys);
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function save(CacheItemInterface $item): bool
     {
         return $this->adapter->save($item);
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function saveDeferred(CacheItemInterface $item): bool
     {
         // Do not add if the last try of saving deferred items fails
-        if ($this->isSaveDeferredItemsFailed === true) {
+        if (true === $this->isSaveDeferredItemsFailed) {
             return false;
         }
 
@@ -126,14 +97,11 @@ class CacheItemPool implements CacheItemPoolInterface
         return true;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function commit(): bool
     {
         $isSucceed = $this->adapter->saveItems($this->deferredItems);
 
-        if ($isSucceed === true) {
+        if (true === $isSucceed) {
             $this->deferredItems = [];
 
             return true;

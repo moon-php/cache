@@ -25,95 +25,68 @@ class RedisAdapter extends AbstractAdapter
      */
     private $separator = '.';
 
-    /**
-     * RedisAdapter constructor.
-     *
-     * @param string $poolName
-     * @param \Redis $redis
-     */
     public function __construct(string $poolName, \Redis $redis)
     {
         $this->poolName = $poolName;
         $this->redis = $redis;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function getItems(array $keys = []): array
     {
-        $this->normalizeKeyName($keys);
-        $items = $this->redis->getMultiple($keys);
+        $normalizedKeys = $this->normalizeKeyNames($keys);
+        $items = $this->redis->getMultiple($normalizedKeys);
 
         $cacheItems = [];
 
         foreach ($items as $k => $item) {
-            if ($item !== false) {
-                $cacheItems[] = $this->createCacheItemFromValue([$keys[$k] => $item]);
+            if (false !== $item) {
+                $cacheItems[] = $this->createCacheItemFromValue([$normalizedKeys[$k] => $item]);
             }
         }
 
         return $cacheItems;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function hasItem(string $key): bool
     {
-        $this->normalizeKeyName($keys);
+        $normalizedKey = $this->normalizeKeyName($key);
 
-        return $this->redis->exists($key);
+        return $this->redis->exists($normalizedKey);
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function getItem(string $key): CacheItemInterface
     {
-        $this->normalizeKeyName($key);
-        $item = $this->redis->get($key);
+        $normalizedKey = $this->normalizeKeyName($key);
+        $item = $this->redis->get($normalizedKey);
 
-        if ($item === false) {
+        if (false === $item) {
             throw new ItemNotFoundException();
         }
 
-        return $this->createCacheItemFromValue([$key => $item]);
+        return $this->createCacheItemFromValue([$normalizedKey => $item]);
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function clear(): bool
     {
-        $keys = $this->redis->keys($this->poolName . $this->separator . '*');
+        $keys = $this->redis->keys($this->poolName.$this->separator.'*');
 
-        return (bool)$this->redis->delete($keys);
+        return (bool) $this->redis->delete($keys);
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function deleteItem(string $key): bool
     {
-        $this->normalizeKeyName($key);
+        $normalizedKey = $this->normalizeKeyName($key);
 
-        return (bool)$this->redis->delete($key);
+        return (bool) $this->redis->delete($normalizedKey);
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function deleteItems(array $keys): bool
     {
-        $this->normalizeKeyName($keys);
+        $normalizedKeys = $this->normalizeKeyNames($keys);
 
-        return (bool)$this->redis->delete($keys);
+        return (bool) $this->redis->delete($normalizedKeys);
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function saveItems(array $items): bool
     {
         $mul = $this->redis->multi();
@@ -122,15 +95,15 @@ class RedisAdapter extends AbstractAdapter
             /** @var CacheItemInterface $item */
             foreach ($items as $k => $item) {
                 if (!$item instanceof CacheItemInterface) {
-                    throw new InvalidArgumentException('All items must implement' . CacheItemInterface::class, $item);
+                    throw new InvalidArgumentException('All items must implement'.CacheItemInterface::class, $item);
                 }
 
-                $key = $this->poolName . $this->separator . $item->getKey();
+                $key = $this->poolName.$this->separator.$item->getKey();
                 $value = [$item->get(), $this->retrieveExpiringDateFromCacheItem($item)];
-                $this->redis->set($key, serialize($value));
+                $this->redis->set($key, \serialize($value));
             }
 
-            return !in_array(false, array_values($mul->exec()), true);
+            return !\in_array(false, \array_values($mul->exec()), true);
         } catch (\Exception $e) {
             $mul->discard();
 
@@ -138,51 +111,38 @@ class RedisAdapter extends AbstractAdapter
         }
     }
 
-    /**
-     * {@inheritdoc}
-     *
-     * @throws InvalidArgumentException
-     */
     public function save(CacheItemInterface $item): bool
     {
-        $key = $this->poolName . $this->separator . $item->getKey();
+        $key = $this->poolName.$this->separator.$item->getKey();
         $value = [$item->get(), $this->retrieveExpiringDateFromCacheItem($item)];
 
-        return $this->redis->set($key, serialize($value));
+        return $this->redis->set($key, \serialize($value));
     }
 
     /**
-     * Normalize the key, adding the poolName prefix
-     *
-     * @param $keys
-     *
-     * @return mixed
+     * Normalize the keys, adding the poolName prefix.
      */
-    protected function normalizeKeyName(&$keys): void
+    protected function normalizeKeyNames(array $keys): array
     {
-        if (is_array($keys)) {
-            foreach ($keys as $k => $key) {
-                $keys[$k] = $this->poolName . $this->separator . $key;
-            }
-        } else {
-            $keys = $this->poolName . $this->separator . $keys;
-        }
+        return \array_map([$this, 'normalizeKeyName'], $keys);
     }
 
     /**
-     * Create a CacheItemInterface object from an item
-     *
-     * @param array $item
-     *
-     * @return CacheItemInterface
-     *
-     * @throws InvalidArgumentException
+     * Normalize the key, adding the poolName prefix.
+     */
+    protected function normalizeKeyName(string $key): string
+    {
+        return $this->poolName.$this->separator.$key;
+    }
+
+    /**
+     * Create a CacheItemInterface object from an item.
      */
     protected function createCacheItemFromValue(array $item): CacheItemInterface
     {
-        $originalKey = key($item);
-        $key = str_replace($this->poolName . $this->separator, '', $originalKey);
-        $values = unserialize($item[$originalKey]);
+        $originalKey = \key($item);
+        $key = \str_replace($this->poolName.$this->separator, '', $originalKey);
+        $values = \unserialize($item[$originalKey]);
 
         // Create a new CacheItem
         return new CacheItem($key, $values[0], $values[1]);
